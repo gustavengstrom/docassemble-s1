@@ -1,0 +1,354 @@
+metadata:
+  title: |
+    s1-14
+  short title: |
+    The undertaking shall disclose information on the extent to which its own workforce is covered by its health and safety management system and the number of incidents associated with work-related injuries, ill health and fatalities of its own workforce. In addition, it shall disclose the number of fatalities as a result of work-related injuries and work-related ill health of other workers working on the undertaking’s sites. All questions marked with * are voluntary. If unsure, leave blank.
+  show login: False
+  description: |
+    DESCRIPTION 
+  revision_date: 2024-09-12
+---
+modules:
+  - .post
+---
+features:
+  #css: sds.css # local CSS pointer ## goood tutorial for styling da: https://www.youtube.com/watch?v=6a3sER5MOK8
+  popover trigger: hover # how to display interactive content/hyperlinks
+  bootstrap theme: https://bootswatch.com/5/flatly/bootstrap.min.css
+  navigation: True
+  progress bar: True
+  show progress bar percentage: True
+  progressive: True
+  inverse navbar: False
+  hide navbar: True
+  question help button: True
+---
+field: intro_screen
+question: |
+  Social 1-14 Own Workforce: Health and safety metrics
+subquestion: |
+  The undertaking shall disclose information on the extent to which its own workforce is covered by its health and safety management system and the number of incidents associated with work-related injuries, ill health and fatalities of its own workforce. In addition, it shall disclose the number of fatalities as a result of work-related injuries and work-related ill health of other workers working on the undertaking’s sites. All questions marked with * are voluntary. If unsure, leave blank.
+
+  To get started, press **Continue**.
+---
+mandatory: True
+code: |
+  multi_user = True
+  guest_member = None
+
+  # Get query params
+  board_id = url_args.get("board_id", "")
+  survey_id = url_args.get("survey_id", "")
+  django_hostname = os.environ.get("DJANGOHOSTNAME")
+  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
+  login_url = f"https://{django_hostname}/accounts/login/"
+
+  token = url_args.get("token")
+
+  intro_screen
+  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  if validate_status != 200:
+     invalid_token_screen
+  else:
+    session_info = json.loads(validate_content)
+    guest_member = session_info.get("boardmember_id")
+    if guest_member:
+      redirect_url = "https://www.beyondcsrd.se"
+
+  # Get more query params
+  organisation_id = url_args.get("organisation", "")
+  target_date = url_args.get("target_date")
+  external_organisation = url_args.get("external_organisation")
+  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
+  list_id = url_args.get("list_id", "optional_default_list_id")
+  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  survey_data = []
+  survey_data.append({'name': 'Please state the percentage of the undertaking&#x27;s own workforce covered by the undertaking’s health and safety management system based on legal requirements and/or recognised standards or guidelines.', 'value': S1_14_1, 'id': 'S1_14_1', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the number of fatalities as a result of work-related injuries and work-related ill health.', 'value': S1_14_2, 'id': 'S1_14_2', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please disclose the number of fatalities as result of work-related injuries and work-related ill health of other workers working on undertaking&#x27;s sites.', 'value': S1_14_3, 'id': 'S1_14_3', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please disclose any recordable work-related accidents for own workforce.', 'value': S1_14_4, 'id': 'S1_14_4', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please state the rate of accidents.', 'value': S1_14_5, 'id': 'S1_14_5', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please state the number of cases of recordable work-related ill health of employees.', 'value': S1_14_6, 'id': 'S1_14_6', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'With regard to the undertaking’s employees, please disclose the number of recorded days lost to work-related injuries and fatalities from work-related accidents, work-related ill health and fatalities from ill health?', 'value': S1_14_7, 'id': 'S1_14_7', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please state the number of cases of recordable work-related ill health of non-employees.*', 'value': S1_14_8, 'id': 'S1_14_8', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please include information about recorded days lost to work-related injuries and fatalities from work-related accidents, work-related ill health and fatalities from ill health of non-employees.*', 'value': S1_14_9, 'id': 'S1_14_9', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please state the percentage of its own workers covered by a health and safety management system which is based on legal requirements and/or recognised standards or guidelines and which has been internally audited and/or audited or certified by an external party.*', 'value': S1_14_10, 'id': 'S1_14_10', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please describe the underlying standards for internal audit or external certification of health and safety management system.*', 'value': S1_14_11, 'id': 'S1_14_11', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the number of cases of recordable work-related ill health detected among former own workforce.*', 'value': S1_14_12, 'id': 'S1_14_12', 'answer_type': 'INTEGER'})
+
+  card_title = 's1-14'
+  card_description = ''
+  # Description section in the wekan board - need to be composed with markdown and be populated with datapartner_url from the intervfile_uploadsiew.
+  card_title = f"{card_title}"
+  card_description = f"{card_description}"
+  
+  email_title = 's1-14'
+  #! Email compose for outgoing email.
+  email_body = f"Dear Partner, <br> <br> This is an automated message to confirm we have recieved the form - {email_title}.  <br> <br> Best regards <br> reportAll Team."
+  
+  email_data = [
+      {
+          "subject": email_title,
+          "body": email_body,
+          "recipients": [],
+          "from": "info@reportall.se",
+      }
+  ]
+
+  survey_data_ids = [d['id'] for d in survey_data]
+  survey_analytics = []
+  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_14_1', 'S1_14_2', 'S1_14_3', 'S1_14_4', 'S1_14_5', 'S1_14_6', 'S1_14_7']])]})
+
+  survey_analytics_dq = []
+  for sa_idx, sa in enumerate(survey_analytics):
+    if not all([_id in survey_data_ids for _id in sa["values"]]):
+      sd_tag = []
+      sd_found = []
+      drop_sa_ids = []
+      for sd in survey_data:
+        for _id in sa["values"]:
+          if _id in sd["id"]:
+            sd_found.append(sd["id"])
+            tag = sd.get("tag")
+            if tag:
+              sd_tag.append(tag)
+            break
+        if len(sd_found) == len(sa["values"]) and len(sd_found)>0:   # Found all sa values in survey_data
+          dynamic_sa_dict = survey_analytics[sa_idx].copy()
+          dynamic_sa_dict["id"] = dynamic_sa_dict["id"] + f"__DQ{sd_found[0].split('__DQ')[-1]}"
+          dynamic_sa_dict["values"] = sd_found
+          dynamic_sa_dict["tag"] = next(iter(set(sd_tag)), None)
+          survey_analytics_dq.append(dynamic_sa_dict)
+          drop_sa_ids.append(sa_idx)
+          sd_found = []
+          sd_tag = []
+    else:
+      survey_analytics_dq.append(sa)
+
+
+  data = {
+      "board_id": board_id,
+      "survey_id": survey_id,
+      "organisation_id": organisation_id,
+      "external_organisation": external_organisation,
+      "survey_data": survey_data,
+      "survey_analytics": survey_analytics_dq,
+      "survey_uploads": [],
+      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
+      "target_date": target_date,
+      "wekan_board": wekan_board,
+      "list_id": list_id,
+      "swimlane_id": swimlane_id,
+      "wekan_data": {
+          "card_title": card_title,
+          "card_description": card_description
+  
+      },
+      # "email_data": email_data,
+      "aux_data": [
+      ],
+      "guest_member": guest_member,
+    }
+
+
+  # send data to django
+  final_screen
+  reponse_status_code, response_content = store_interview_results(data)
+  if reponse_status_code == 200:
+    define('error_screen', False) 
+    command('exit', url=redirect_url)
+  else:
+    error_screen
+--- 
+progress: 0
+question: |
+  Please state the percentage of the undertaking&#x27;s own workforce covered by the undertaking’s health and safety management system based on legal requirements and/or recognised standards or guidelines. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 80. In relation to paragraph 88 (a), the percentage of its own workforce who are covered by the undertaking’s health and safety management system shall be disclosed on a head count basis rather than a full-time equivalent basis.
+back button: True
+fields:
+  - no label: S1_14_1
+    datatype: number
+    required: false
+--- 
+progress: 9
+question: |
+  Please disclose the number of fatalities as a result of work-related injuries and work-related ill health. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 82. Fatalities may be reported separately for those resulting from work-related injuries and those resulting from work-related ill health. AR 89. In computing the rate of work-related injuries, the undertaking shall divide the respective number of cases by the number of total hours worked by people in its own workforce and multiplied by 1,000,000. Thereby, these rates represent the number of respective cases per one million hours AR 82. Fatalities may be reported separately for those resulting from work-related injuries and those resulting from work-related ill health.worked. A rate based on 1,000,000 hours worked indicates the number of work-related injuries per 500 full time people in the workforce over a 1-year timeframe. For comparability purposes a rate based on 1,000,000 hours worked shall be used also for undertakings with less than 500 people in the workforce.
+    AR 90. If the undertaking cannot directly calculate the number of hours worked, it may estimate this on the basis of normal or standard hours of work, taking into account entitlements to periods of paid leave of absence from work (for example, paid vacations, paid sick leave, public holidays) and explain this in its disclosures.
+    AR 91. An undertaking shall include fatalities as a result of work-related injury in the calculation of the number and rate of recordable work-related injuries.
+back button: True
+fields:
+  - no label: S1_14_2
+    datatype: integer
+    required: false
+--- 
+progress: 17
+question: |
+  Please disclose the number of fatalities as result of work-related injuries and work-related ill health of other workers working on undertaking&#x27;s sites. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 82. Fatalities may be reported separately for those resulting from work-related injuries and those resulting from work-related ill health. AR 89. In computing the rate of work-related injuries, the undertaking shall divide the respective number of cases by the number of total hours worked by people in its own workforce and multiplied by 1,000,000. Thereby, these rates represent the number of respective cases per one million hours AR 82. Fatalities may be reported separately for those resulting from work-related injuries and those resulting from work-related ill health.worked. A rate based on 1,000,000 hours worked indicates the number of work-related injuries per 500 full time people in the workforce over a 1-year timeframe. For comparability purposes a rate based on 1,000,000 hours worked shall be used also for undertakings with less than 500 people in the workforce.
+    AR 90. If the undertaking cannot directly calculate the number of hours worked, it may estimate this on the basis of normal or standard hours of work, taking into account entitlements to periods of paid leave of absence from work (for example, paid vacations, paid sick leave, public holidays) and explain this in its disclosures.
+    AR 91. An undertaking shall include fatalities as a result of work-related injury in the calculation of the number and rate of recordable work-related injuries.
+back button: True
+fields:
+  - no label: S1_14_3
+    datatype: integer
+    required: false
+--- 
+progress: 25
+question: |
+  Please disclose any recordable work-related accidents for own workforce. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 89. In computing the rate of work-related injuries, the undertaking shall divide the respective number of cases by the number of total hours worked by people in its own workforce and multiplied by 1,000,000. Thereby, these rates represent the number of respective cases per one million hours worked. A rate based on 1,000,000 hours worked indicates the number of work-related injuries per 500 full time people in the workforce over a 1-year timeframe. For comparability purposes a rate based on 1,000,000 hours worked shall be used also for undertakings with less than 500 people in the workforce.
+    AR 90. If the undertaking cannot directly calculate the number of hours worked, it may estimate this on the basis of normal or standard hours of work, taking into account entitlements to periods of paid leave of absence from work (for example, paid vacations, paid sick leave, public holidays) and explain this in its disclosures.
+    AR 91. An undertaking shall include fatalities as a result of work-related injury in the calculation of the number and rate of recordable work-related injuries. AR 95. The undertaking shall count the number of days lost such that the first full day and last day of absence shall be included. Calendar days should be considered for the calculation, thus days on which the affected individual is not scheduled for work (for example, weekends, public holidays) will count as lost days.
+back button: True
+fields:
+  - no label: S1_14_4
+    datatype: integer
+    required: false
+--- 
+progress: 34
+question: |
+  Please state the rate of accidents. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 89. In computing the rate of work-related injuries, the undertaking shall divide the respective number of cases by the number of total hours worked by people in its own workforce and multiplied by 1,000,000. Thereby, these rates represent the number of respective cases per one million hours worked. A rate based on 1,000,000 hours worked indicates the number of work-related injuries per 500 full time people in the workforce over a 1-year timeframe. For comparability purposes a rate based on 1,000,000 hours worked shall be used also for undertakings with less than 500 people in the workforce.
+    AR 90. If the undertaking cannot directly calculate the number of hours worked, it may estimate this on the basis of normal or standard hours of work, taking into account entitlements to periods of paid leave of absence from work (for example, paid vacations, paid sick leave, public holidays) and explain this in its disclosures.
+    AR 91. An undertaking shall include fatalities as a result of work-related injury in the calculation of the number and rate of recordable work-related injuries. AR 95. The undertaking shall count the number of days lost such that the first full day and last day of absence shall be included. Calendar days should be considered for the calculation, thus days on which the affected individual is not scheduled for work (for example, weekends, public holidays) will count as lost days.
+back button: True
+fields:
+  - no label: S1_14_5
+    datatype: number
+    required: false
+--- 
+progress: 42
+question: |
+  Please state the number of cases of recordable work-related ill health of employees. 
+back button: True
+fields:
+  - no label: S1_14_6
+    datatype: integer
+    required: false
+--- 
+progress: 50
+question: |
+  With regard to the undertaking’s employees, please disclose the number of recorded days lost to work-related injuries and fatalities from work-related accidents, work-related ill health and fatalities from ill health? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 95. The undertaking shall count the number of days lost such that the first full day and last day of absence shall be included. Calendar days should be considered for the calculation, thus days on which the affected individual is not scheduled for work (for example, weekends, public holidays) will count as lost days.
+back button: True
+fields:
+  - no label: S1_14_7
+    datatype: integer
+    required: false
+--- 
+progress: 59
+question: |
+  Please state the number of cases of recordable work-related ill health of non-employees.* 
+back button: True
+fields:
+  - no label: S1_14_8
+    datatype: integer
+    required: false
+--- 
+progress: 67
+question: |
+  Please include information about recorded days lost to work-related injuries and fatalities from work-related accidents, work-related ill health and fatalities from ill health of non-employees.* 
+back button: True
+fields:
+  - no label: S1_14_9
+    datatype: integer
+    required: false
+--- 
+progress: 75
+question: |
+  Please state the percentage of its own workers covered by a health and safety management system which is based on legal requirements and/or recognised standards or guidelines and which has been internally audited and/or audited or certified by an external party.* 
+back button: True
+fields:
+  - no label: S1_14_10
+    datatype: number
+    required: false
+--- 
+progress: 84
+question: |
+  Please describe the underlying standards for internal audit or external certification of health and safety management system.* 
+back button: True
+fields:
+  - no label: S1_14_11
+    datatype: area
+    required: false
+--- 
+progress: 92
+question: |
+  Please disclose the number of cases of recordable work-related ill health detected among former own workforce.* 
+back button: True
+fields:
+  - no label: S1_14_12
+    datatype: integer
+    required: false
+---
+#! Response report before submission
+progress: 100
+field: final_screen
+back button: True
+question: |
+  Congratulations!
+subquestion: |
+  All questions have been addressed. Press the submit button below to send in your answers.
+continue button label: Submit answers!
+
+---
+#! Response report before submission
+event: error_screen
+prevent going back: True
+question: |
+  Something went wrong when submitting your answers. 
+subquestion: |  
+  Please try again or contact <a href="mailto:info@beyondcsrd.se">info@beyondcsrd.se</a> for help.
+under: |
+  Details: ${ response_content.decode() }
+buttons:
+  Exit: exit
+
+---
+
+event: require_login_screen
+question: |
+  Oops! You have been logged out. Please login again.
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---
+
+event: invalid_token_screen
+question: |
+  Your survey token is invalid. Please contact the administrator to request a new url. 
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---

@@ -1,0 +1,676 @@
+metadata:
+  title: |
+    s1-4
+  short title: |
+    All questions marked with * are voluntary. If unsure, leave blank.
+  show login: False
+  description: |
+    DESCRIPTION 
+  revision_date: 2024-09-12
+---
+modules:
+  - .post
+---
+features:
+  #css: sds.css # local CSS pointer ## goood tutorial for styling da: https://www.youtube.com/watch?v=6a3sER5MOK8
+  popover trigger: hover # how to display interactive content/hyperlinks
+  bootstrap theme: https://bootswatch.com/5/flatly/bootstrap.min.css
+  navigation: True
+  progress bar: True
+  show progress bar percentage: True
+  progressive: True
+  inverse navbar: False
+  hide navbar: True
+  question help button: True
+---
+field: intro_screen
+question: |
+  Social 1-4 Own Workforce: Taking action on material impacts on own workforce, and approaches to managing material risks and pursuing material opportunities related to own workforce, and effectiveness of those actions
+subquestion: |
+  All questions marked with * are voluntary. If unsure, leave blank.
+
+  To get started, press **Continue**.
+---
+mandatory: True
+code: |
+  multi_user = True
+  guest_member = None
+
+  # Get query params
+  board_id = url_args.get("board_id", "")
+  survey_id = url_args.get("survey_id", "")
+  django_hostname = os.environ.get("DJANGOHOSTNAME")
+  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
+  login_url = f"https://{django_hostname}/accounts/login/"
+
+  token = url_args.get("token")
+
+  intro_screen
+  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  if validate_status != 200:
+     invalid_token_screen
+  else:
+    session_info = json.loads(validate_content)
+    guest_member = session_info.get("boardmember_id")
+    if guest_member:
+      redirect_url = "https://www.beyondcsrd.se"
+
+  # Get more query params
+  organisation_id = url_args.get("organisation", "")
+  target_date = url_args.get("target_date")
+  external_organisation = url_args.get("external_organisation")
+  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
+  list_id = url_args.get("list_id", "optional_default_list_id")
+  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  survey_data = []
+  survey_data.append({'name': 'Are there action plans and resources to manage its material impacts, risks, and opportunities related to own workforce?', 'value': S1_4_1 if S1_4_1!='None' else '', 'id': 'S1_4_1', 'answer_type': 'Yes/No/Partly', 'dynamic_header':'Please elaborate on the questions below for each action.', 'dynamic_condition_criteria': 'Yes/Partly'})
+  if not defined('S1_4_2'):
+    define('S1_4_2', '_n/a_')
+  survey_data.append({'name': 'Please disclose reasons for not having adopted actions.', 'value': S1_4_2, 'id': 'S1_4_2', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_1', 'condition_criteria': 'No'})
+  if not defined('S1_4_3'):
+    define('S1_4_3', '_n/a_')
+  survey_data.append({'name': 'Please disclose the timeframe in which the undertakings aims to adopt actions.*', 'value': S1_4_3, 'id': 'S1_4_3', 'answer_type': 'OPEN', 'condition': 'S1_4_1', 'condition_criteria': 'No'})
+  if S1_4_1 in ['Yes', 'Partly']:
+    S1_4_4.gather()
+  else:
+    EmptyPlaceHolderThing.name.text = ''
+    S1_4_4.append(EmptyPlaceHolderThing)
+    S1_4_4.there_is_another = False
+    S1_4_4.gathered = True
+  for index, indicator in enumerate(S1_4_4):
+    if not indicator.attribute_defined('S1_4_5'):
+      indicator.S1_4_5 = '_n/a_'
+    survey_data.append({'name': 'Please provide a short description of the action.', 'value': indicator.S1_4_5, 'id': f'S1_4_5__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_6'):
+      indicator.S1_4_6 = '_n/a_'
+    survey_data.append({'name': 'Disclosure of key action.', 'value': indicator.S1_4_6, 'id': f'S1_4_6__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_7'):
+      indicator.S1_4_7 = '_n/a_'
+    survey_data.append({'name': 'Description of scope of key action.', 'value': indicator.S1_4_7, 'id': f'S1_4_7__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_8'):
+      indicator.S1_4_8 = '_n/a_'
+    survey_data.append({'name': 'Time horizon under which key action is to be completed.', 'value': indicator.S1_4_8, 'id': f'S1_4_8__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_9'):
+      indicator.S1_4_9 = '_n/a_'
+    survey_data.append({'name': 'Description of key action taken, and its results, to provide for and cooperate in or support provision of remedy for those harmed by actual material impacts.', 'value': indicator.S1_4_9, 'id': f'S1_4_9__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_10'):
+      indicator.S1_4_10 = '_n/a_'
+    survey_data.append({'name': 'Disclosure of quantitative and qualitative information regarding progress of actions or action plans disclosed in prior periods.', 'value': indicator.S1_4_10, 'id': f'S1_4_10__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_11'):
+      indicator.S1_4_11 = '_n/a_'
+    survey_data.append({'name': 'Disclosure of the type of current and future financial and other resources allocated to the action plan (Capex and Opex).', 'value': indicator.S1_4_11, 'id': f'S1_4_11__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_12'):
+      indicator.S1_4_12 = '_n/a_'
+    survey_data.append({'name': 'Please explain how current financial resources relate to most relevant amounts presented in financial statements.', 'value': indicator.S1_4_12, 'id': f'S1_4_12__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_13'):
+      indicator.S1_4_13 = '_n/a_'
+    survey_data.append({'name': 'Current financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_13, 'id': f'S1_4_13__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_14'):
+      indicator.S1_4_14 = '_n/a_'
+    survey_data.append({'name': 'Current financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_14, 'id': f'S1_4_14__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_15'):
+      indicator.S1_4_15 = '_n/a_'
+    survey_data.append({'name': 'Future financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_15, 'id': f'S1_4_15__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    if not indicator.attribute_defined('S1_4_16'):
+      indicator.S1_4_16 = '_n/a_'
+    survey_data.append({'name': 'Future financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_16, 'id': f'S1_4_16__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+  if S1_4_1 not in ['Yes', 'Partly']:
+    S1_4_4.clear()
+  survey_data.append({'name': 'Please disclose how future financial resources relate to most relevant amounts presented in financial statements.', 'value': S1_4_17, 'id': 'S1_4_17', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Has the undertaking has taken action to provide or enable remedy in relation to an actual material impact?', 'value': S1_4_18 if S1_4_18!='None' else '', 'id': 'S1_4_18', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_19'):
+    define('S1_4_19', '_n/a_')
+  survey_data.append({'name': 'If yes or partly please disclose how the undertaking has taken action to provide or enable remedy in relation to an actual material impact.', 'value': S1_4_19, 'id': 'S1_4_19', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_18', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Are there any additional actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce?', 'value': S1_4_20 if S1_4_20!='None' else '', 'id': 'S1_4_20', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_21'):
+    define('S1_4_21', '_n/a_')
+  survey_data.append({'name': 'Please disclose actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce.', 'value': S1_4_21, 'id': 'S1_4_21', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_20', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce?', 'value': S1_4_22 if S1_4_22!='None' else '', 'id': 'S1_4_22', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_23'):
+    define('S1_4_23', '_n/a_')
+  survey_data.append({'name': 'Please disclose how the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce.', 'value': S1_4_23, 'id': 'S1_4_23', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_22', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking have processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce?', 'value': S1_4_24 if S1_4_24!='None' else '', 'id': 'S1_4_24', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_25'):
+    define('S1_4_25', '_n/a_')
+  survey_data.append({'name': 'Please share the undertaking&#x27;s processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce.', 'value': S1_4_25, 'id': 'S1_4_25', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_24', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking plan or implement any action to mitigate material risks for the undertaking arising from its impacts and dependencies on its own workforce?', 'value': S1_4_26 if S1_4_26!='None' else '', 'id': 'S1_4_26', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_27'):
+    define('S1_4_27', '_n/a_')
+  survey_data.append({'name': 'Please describe the actions and how it tracks effectiveness in practice.', 'value': S1_4_27, 'id': 'S1_4_27', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_26', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking have action/s planned or underway to pursue material opportunities for the undertaking in relation to its own workforce?', 'value': S1_4_28 if S1_4_28!='None' else '', 'id': 'S1_4_28', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_29'):
+    define('S1_4_29', '_n/a_')
+  survey_data.append({'name': 'Please share the actions planned or underway to pursue material opportunities for the undertaking in relation to its own workforce.', 'value': S1_4_29, 'id': 'S1_4_29', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  if not defined('S1_4_30'):
+    define('S1_4_30', '_n/a_')
+  survey_data.append({'name': 'Please disclose information about whether and how people in the undertaking&#x27;s own workforce and workers’ representatives play a role in decisions regarding the design and implementation of programmes or processes whose primary aim is to deliver positive impacts for workers.*', 'value': S1_4_30, 'id': 'S1_4_30', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  if not defined('S1_4_31'):
+    define('S1_4_31', '_n/a_')
+  survey_data.append({'name': 'Please disclose information about the intended or achieved positive outcomes for the undertaking’s own workforce of these programmes or processes.*', 'value': S1_4_31, 'id': 'S1_4_31', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  if not defined('S1_4_32'):
+    define('S1_4_32', '_n/a_')
+  survey_data.append({'name': 'Please also explain whether any such initiatives are designed also to support the achievement of one or more Sustainable Development Goals.*', 'value': S1_4_32, 'id': 'S1_4_32', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce?', 'value': S1_4_33 if S1_4_33!='None' else '', 'id': 'S1_4_33', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_34'):
+    define('S1_4_34', '_n/a_')
+  survey_data.append({'name': 'Please disclose how the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce.', 'value': S1_4_34, 'id': 'S1_4_34', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_33', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking allocate resources to the management of its material impacts?', 'value': S1_4_35 if S1_4_35!='None' else '', 'id': 'S1_4_35', 'answer_type': 'Yes/No/Partly'})
+  if not defined('S1_4_36'):
+    define('S1_4_36', '_n/a_')
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s resources allocated to the management of its material impacts.', 'value': S1_4_36, 'id': 'S1_4_36', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_35', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s general and specific approaches to addressing material negative impacts.*', 'value': S1_4_37, 'id': 'S1_4_37', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s initiatives aimed at contributing to additional material positive impacts.*', 'value': S1_4_38, 'id': 'S1_4_38', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose how far the undertaking has progressed in its efforts during the reporting period.*', 'value': S1_4_39, 'id': 'S1_4_39', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'The undertaking may disclose its aims for continued improvement.*', 'value': S1_4_40, 'id': 'S1_4_40', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose whether and how the undertaking seeks to use its leverage in its business relationships to manage material negative impacts affecting its own workforce.*', 'value': S1_4_41, 'id': 'S1_4_41', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose how the initiative, and the undertaking&#x27;s own involvement, is aiming to address the material impact concerned.*', 'value': S1_4_42, 'id': 'S1_4_42', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please share information about measures taken to mitigate negative impacts on its own workforce that arise from the transition to a greener, climate-neutral economy.', 'value': S1_4_43, 'id': 'S1_4_43', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please explain which internal functions are involved in managing the impacts and what types of action they take to address negative and advance positive impacts.*', 'value': S1_4_44, 'id': 'S1_4_44', 'answer_type': 'OPEN_LARGE'})
+
+  card_title = 's1-4'
+  card_description = ''
+  # Description section in the wekan board - need to be composed with markdown and be populated with datapartner_url from the intervfile_uploadsiew.
+  card_title = f"{card_title}"
+  card_description = f"{card_description}"
+  
+  email_title = 's1-4'
+  #! Email compose for outgoing email.
+  email_body = f"Dear Partner, <br> <br> This is an automated message to confirm we have recieved the form - {email_title}.  <br> <br> Best regards <br> reportAll Team."
+  
+  email_data = [
+      {
+          "subject": email_title,
+          "body": email_body,
+          "recipients": [],
+          "from": "info@reportall.se",
+      }
+  ]
+
+  survey_data_ids = [d['id'] for d in survey_data]
+  survey_analytics = []
+  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_4_1', 'S1_4_2', 'S1_4_4', 'S1_4_5', 'S1_4_6', 'S1_4_7', 'S1_4_8', 'S1_4_9', 'S1_4_10', 'S1_4_11', 'S1_4_12', 'S1_4_13', 'S1_4_14', 'S1_4_15', 'S1_4_16', 'S1_4_17', 'S1_4_18', 'S1_4_19', 'S1_4_20', 'S1_4_21', 'S1_4_22', 'S1_4_23', 'S1_4_24', 'S1_4_25', 'S1_4_26', 'S1_4_27', 'S1_4_28', 'S1_4_29', 'S1_4_33', 'S1_4_34', 'S1_4_35', 'S1_4_36', 'S1_4_43']])]})
+  survey_analytics.append({"id": "S1_4_F1", "name": "Action plans to manage workforce", "values": ["S1_4_6", "S1_4_7", "S1_4_8", "S1_4_9", "S1_4_10"], "labels": ["Key action", "Scope", "Time horizon", "Provision of remedy", "Progress"], "dtypes": ["OPEN", "OPEN", "OPEN", "OPEN", "OPEN"]})
+  survey_analytics.append({"id": "S1_4_F2", "name": "Resources to manage workforce", "values": ["S1_4_13", "S1_4_14", "S1_4_15", "S1_4_16"], "labels": ["Current resources Capex", "Current resources Opex", "Future resources Capex", "Future resources Opex"], "dtypes": ["CURRENCY", "CURRENCY", "CURRENCY", "CURRENCY"]})
+
+  survey_analytics_dq = []
+  for sa_idx, sa in enumerate(survey_analytics):
+    if not all([_id in survey_data_ids for _id in sa["values"]]):
+      sd_tag = []
+      sd_found = []
+      drop_sa_ids = []
+      for sd in survey_data:
+        for _id in sa["values"]:
+          if _id in sd["id"]:
+            sd_found.append(sd["id"])
+            tag = sd.get("tag")
+            if tag:
+              sd_tag.append(tag)
+            break
+        if len(sd_found) == len(sa["values"]) and len(sd_found)>0:   # Found all sa values in survey_data
+          dynamic_sa_dict = survey_analytics[sa_idx].copy()
+          dynamic_sa_dict["id"] = dynamic_sa_dict["id"] + f"__DQ{sd_found[0].split('__DQ')[-1]}"
+          dynamic_sa_dict["values"] = sd_found
+          dynamic_sa_dict["tag"] = next(iter(set(sd_tag)), None)
+          survey_analytics_dq.append(dynamic_sa_dict)
+          drop_sa_ids.append(sa_idx)
+          sd_found = []
+          sd_tag = []
+    else:
+      survey_analytics_dq.append(sa)
+
+
+  data = {
+      "board_id": board_id,
+      "survey_id": survey_id,
+      "organisation_id": organisation_id,
+      "external_organisation": external_organisation,
+      "survey_data": survey_data,
+      "survey_analytics": survey_analytics_dq,
+      "survey_uploads": [],
+      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
+      "target_date": target_date,
+      "wekan_board": wekan_board,
+      "list_id": list_id,
+      "swimlane_id": swimlane_id,
+      "wekan_data": {
+          "card_title": card_title,
+          "card_description": card_description
+  
+      },
+      # "email_data": email_data,
+      "aux_data": [
+      ],
+      "guest_member": guest_member,
+    }
+
+
+  # send data to django
+  final_screen
+  reponse_status_code, response_content = store_interview_results(data)
+  if reponse_status_code == 200:
+    define('error_screen', False) 
+    command('exit', url=redirect_url)
+  else:
+    error_screen
+--- 
+progress: 0
+question: |
+  Are there action plans and resources to manage its material impacts, risks, and opportunities related to own workforce? 
+back button: True
+fields:
+  - no label: S1_4_1
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose reasons for not having adopted actions.": S1_4_2
+    required: false
+    datatype: area
+    js show if: |
+      ['No'].includes(val('S1_4_1'))
+  - "Please disclose the timeframe in which the undertakings aims to adopt actions.*": S1_4_3
+    required: false
+    datatype: text
+    js show if: |
+      ['No'].includes(val('S1_4_1'))
+---
+objects:
+  - S1_4_4: DAList.using(object_type=Thing, there_are_any=True)
+  - EmptyPlaceHolderThing: Thing
+---
+question: |
+  Would you like to add another?
+yesno: S1_4_4.there_is_another
+back button: True
+---
+progress: 6
+question: |
+  Please elaborate on the questions below for each action.
+back button: True
+fields:
+  - Please provide a short description of the action.: S1_4_4[i].S1_4_5
+    datatype: text
+    required: false
+  - Disclosure of key action.: S1_4_4[i].S1_4_6
+    datatype: text
+    required: false
+  - Description of scope of key action.: S1_4_4[i].S1_4_7
+    datatype: text
+    required: false
+  - Time horizon under which key action is to be completed.: S1_4_4[i].S1_4_8
+    datatype: text
+    required: false
+  - Description of key action taken, and its results, to provide for and cooperate in or support provision of remedy for those harmed by actual material impacts.: S1_4_4[i].S1_4_9
+    datatype: text
+    required: false
+  - Disclosure of quantitative and qualitative information regarding progress of actions or action plans disclosed in prior periods.: S1_4_4[i].S1_4_10
+    datatype: text
+    required: false
+  - Disclosure of the type of current and future financial and other resources allocated to the action plan (Capex and Opex).: S1_4_4[i].S1_4_11
+    datatype: text
+    required: false
+  - Please explain how current financial resources relate to most relevant amounts presented in financial statements.: S1_4_4[i].S1_4_12
+    datatype: text
+    required: false
+  - Current financial resources allocated to action plan (Capex).: S1_4_4[i].S1_4_13
+    datatype: number
+    required: false
+  - Current financial resources allocated to action plan (Opex).: S1_4_4[i].S1_4_14
+    datatype: number
+    required: false
+  - Future financial resources allocated to action plan (Capex).: S1_4_4[i].S1_4_15
+    datatype: number
+    required: false
+  - Future financial resources allocated to action plan (Opex).: S1_4_4[i].S1_4_16
+    datatype: number
+    required: false
+--- 
+progress: 11
+question: |
+  Please disclose how future financial resources relate to most relevant amounts presented in financial statements. 
+back button: True
+fields:
+  - no label: S1_4_17
+    datatype: area
+    required: false
+--- 
+progress: 16
+question: |
+  Has the undertaking has taken action to provide or enable remedy in relation to an actual material impact? 
+back button: True
+fields:
+  - no label: S1_4_18
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "If yes or partly please disclose how the undertaking has taken action to provide or enable remedy in relation to an actual material impact.": S1_4_19
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_18'))
+--- 
+progress: 22
+question: |
+  Are there any additional actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 42. When disclosing the intended or achieved positive outcomes of its actions for the undertaking’s own workforce, a distinction is to be made between evidence of certain activities having occurred (for example, that x number of people have received financial literacy training) from evidence of actual outcomes for the people concerned (for example, that x people report that they are able to better manage their pay and their household budgets).
+back button: True
+fields:
+  - no label: S1_4_20
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce.": S1_4_21
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_20'))
+--- 
+progress: 27
+question: |
+  Does the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 38. Processes used to track the effectiveness of actions can include internal or external auditing or verification, court proceedings and/or related court decisions, impact assessments, measurement systems, stakeholder feedback, grievance mechanisms, external performance ratings, and benchmarking.
+    AR 39. Reporting on effectiveness is aimed at enabling the understanding of the links between actions taken by an undertaking and the effective management of impacts. Additional information that the undertaking may provide includes data showing a decrease in the number of incidents identified.
+back button: True
+fields:
+  - no label: S1_4_22
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose how the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce.": S1_4_23
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_22'))
+--- 
+progress: 32
+question: |
+  Does the undertaking have processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 34. Appropriate action can vary according to whether the undertaking causes or contributes to a material impact, or whether it is involved because the impact is directly linked to its operations, products or services by a business relationship.
+back button: True
+fields:
+  - no label: S1_4_24
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please share the undertaking&#x27;s processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce.": S1_4_25
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_24'))
+--- 
+progress: 37
+question: |
+  Does the undertaking plan or implement any action to mitigate material risks for the undertaking arising from its impacts and dependencies on its own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 44. When disclosing the material risks and opportunities related to its impacts or dependencies on its own workforce, the undertaking may consider the following&#58;
+    (a)
+    risks related to the undertaking’s impacts on its own workforce may include the reputational or legal exposure where people in the undertaking’s workforce are found to be subject to forced labour or child labour;
+    (b)
+    risks related to the undertaking’s dependencies on its own workforce may include disruption of business operations where significant employee turnover or lack of skills/training development threaten the undertaking’s business; and
+    (c)
+    opportunities related to the undertaking’s impacts on its own workforce may include market differentiation and greater customer appeal from guaranteeing decent pay and conditions for non-employees.
+    AR 45. When explaining whether dependencies turn into risks, the undertaking shall consider external developments. AR 47. The undertaking shall consider whether and how its process(es) to manage material risks related to own workforce are integrated into its existing risk management process(es).
+back button: True
+fields:
+  - no label: S1_4_26
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please describe the actions and how it tracks effectiveness in practice.": S1_4_27
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_26'))
+--- 
+progress: 43
+question: |
+  Does the undertaking have action/s planned or underway to pursue material opportunities for the undertaking in relation to its own workforce? 
+back button: True
+fields:
+  - no label: S1_4_28
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please share the actions planned or underway to pursue material opportunities for the undertaking in relation to its own workforce.": S1_4_29
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_28'))
+  - "Please disclose information about whether and how people in the undertaking&#x27;s own workforce and workers’ representatives play a role in decisions regarding the design and implementation of programmes or processes whose primary aim is to deliver positive impacts for workers.*": S1_4_30
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_28'))
+  - "Please disclose information about the intended or achieved positive outcomes for the undertaking’s own workforce of these programmes or processes.*": S1_4_31
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_28'))
+  - "Please also explain whether any such initiatives are designed also to support the achievement of one or more Sustainable Development Goals.*": S1_4_32
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_28'))
+--- 
+progress: 48
+question: |
+  Does the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    Including, where relevant, its practices in relation to procurement, sales and data use. AR 37. When disclosing whether and how the undertaking considers actual and potential impacts on its own workforce in decisions to terminate business relationships and whether and how it seeks to address any negative impacts that may result from termination, the undertaking may include examples.
+back button: True
+fields:
+  - no label: S1_4_33
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose how the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce.": S1_4_34
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_33'))
+--- 
+progress: 53
+question: |
+  Does the undertaking allocate resources to the management of its material impacts? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    Please share information that allows users to gain an understanding of how the material impacts are managed.
+back button: True
+fields:
+  - no label: S1_4_35
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose the undertaking&#x27;s resources allocated to the management of its material impacts.": S1_4_36
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('S1_4_35'))
+--- 
+progress: 58
+question: |
+  Please disclose the undertaking&#x27;s general and specific approaches to addressing material negative impacts.* 
+back button: True
+fields:
+  - no label: S1_4_37
+    datatype: area
+    required: false
+--- 
+progress: 64
+question: |
+  Please disclose the undertaking&#x27;s initiatives aimed at contributing to additional material positive impacts.* 
+back button: True
+fields:
+  - no label: S1_4_38
+    datatype: area
+    required: false
+--- 
+progress: 69
+question: |
+  Please disclose how far the undertaking has progressed in its efforts during the reporting period.* 
+back button: True
+fields:
+  - no label: S1_4_39
+    datatype: area
+    required: false
+--- 
+progress: 74
+question: |
+  The undertaking may disclose its aims for continued improvement.* 
+back button: True
+fields:
+  - no label: S1_4_40
+    datatype: area
+    required: false
+--- 
+progress: 79
+question: |
+  Please disclose whether and how the undertaking seeks to use its leverage in its business relationships to manage material negative impacts affecting its own workforce.* 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    This information is provided given that material negative impacts affecting its own workforce that have occurred during the reporting period may also be connected with other entities or operations outside its direct control. This may include using commercial leverage (for example, enforcing contractual requirements with business relationships or implementing incentives), other forms of leverage within the relationship (such as providing training or capacity-building on workers’ rights to entities with which the undertaking has a business relationship) or collaborative leverage with peers or other actors (such as initiatives aimed at responsible recruitment or ensuring workers receive an adequate wage).
+back button: True
+fields:
+  - no label: S1_4_41
+    datatype: area
+    required: false
+--- 
+progress: 85
+question: |
+  Please disclose how the initiative, and the undertaking&#x27;s own involvement, is aiming to address the material impact concerned.* 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    This is when the undertaking discloses its participation in an industry or multi-stakeholder initiative as part of its actions to address material negative impacts. It may report under ESRS S1-5 the relevant targets set by the initiative and progress towards them.
+back button: True
+fields:
+  - no label: S1_4_42
+    datatype: area
+    required: false
+--- 
+progress: 90
+question: |
+  Please share information about measures taken to mitigate negative impacts on its own workforce that arise from the transition to a greener, climate-neutral economy. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    This can include training and reskilling, employment guarantees, and in the case of downscaling or mass dismissal, measures such as job counselling, coaching, intra-company placements and early retirement plans, the undertaking shall disclose those measures. This includes measures to comply with prevailing regulation. The undertaking may highlight present and/or expected external developments that influence whether dependencies turn into risks. This includes consideration of impacts that may arise from the transition to greener and climate-neutral operations.
+back button: True
+fields:
+  - no label: S1_4_43
+    datatype: area
+    required: false
+--- 
+progress: 95
+question: |
+  Please explain which internal functions are involved in managing the impacts and what types of action they take to address negative and advance positive impacts.* 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    This information concerns when disclosing the resources allocated to the management of material impacts.
+back button: True
+fields:
+  - no label: S1_4_44
+    datatype: area
+    required: false
+---
+code: |
+  S1_4_4[i].name.text=S1_4_4[i].S1_4_5
+---
+#! Response report before submission
+progress: 100
+field: final_screen
+back button: True
+question: |
+  Congratulations!
+subquestion: |
+  All questions have been addressed. Press the submit button below to send in your answers.
+continue button label: Submit answers!
+
+---
+#! Response report before submission
+event: error_screen
+prevent going back: True
+question: |
+  Something went wrong when submitting your answers. 
+subquestion: |  
+  Please try again or contact <a href="mailto:info@beyondcsrd.se">info@beyondcsrd.se</a> for help.
+under: |
+  Details: ${ response_content.decode() }
+buttons:
+  Exit: exit
+
+---
+
+event: require_login_screen
+question: |
+  Oops! You have been logged out. Please login again.
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---
+
+event: invalid_token_screen
+question: |
+  Your survey token is invalid. Please contact the administrator to request a new url. 
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---

@@ -1,0 +1,396 @@
+metadata:
+  title: |
+    esrs-2-sbm-3
+  short title: |
+    The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank.
+  show login: False
+  description: |
+    DESCRIPTION 
+  revision_date: 2024-09-12
+---
+modules:
+  - .post
+---
+features:
+  #css: sds.css # local CSS pointer ## goood tutorial for styling da: https://www.youtube.com/watch?v=6a3sER5MOK8
+  popover trigger: hover # how to display interactive content/hyperlinks
+  bootstrap theme: https://bootswatch.com/5/flatly/bootstrap.min.css
+  navigation: True
+  progress bar: True
+  show progress bar percentage: True
+  progressive: True
+  inverse navbar: False
+  hide navbar: True
+  question help button: True
+---
+field: intro_screen
+question: |
+  Strategy and Business Model (SBM): Material impacts, risks and opportunities and their interaction with strategy and business model
+subquestion: |
+  The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank.
+
+  To get started, press **Continue**.
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    Social and human rights matters Non-exhaustive list of factors to consider in Materiality Assessment
+    Secure employment 
+    % of employees with temporary contracts, ratio of non-employees to employees, social protection
+    Working time
+    % of employees with part time or zero-hour contracts, employee satisfaction with working time
+    Adequate wages
+    EU, national or local legal definitions of adequate wages, fair wages, and minimum wages
+    Social dialogue / existence of work councils / information, consultation and participation rights of workers
+    Extent of workplace, cross-border and board-level representation through trade unions and/or works councils
+    Freedom of association/Collective bargaining including the rate of workforce covered by collective agreements
+    % of own workforce covered by collective bargaining agreements, work stoppages
+    Work-life balance
+    Family-related leave, flexible working hours, access to childcare
+    Health and safety
+    Coverage by H&amp;S system, rate of fatalities, non-fatal accidents, work-related ill health, work days lost
+    Gender equality and equal pay for work of equal value
+    % of women in top management and workforce, male-female wage gap
+    Training and skills development
+    Amount and distribution of training, % of employees with regular performance and development reviews
+    The employment and inclusion of people with disabilities
+    % employment and accessibility measures for employees with disabilities
+    Measures against violence and harassment in the workplace
+    Prevalence of violence and harassment
+    Diversity
+    Representation of women and /or ethnic groups or minorities in own workforce. Age distribution in own workforce. Percentage of persons with disabilities within the own workforce.
+    Child labour
+    Type of operations and geographical areas at risk of child labour
+    Forced labour
+    Type of operations and geographical areas at risk of forced labour
+---
+mandatory: True
+code: |
+  multi_user = True
+  guest_member = None
+
+  # Get query params
+  board_id = url_args.get("board_id", "")
+  survey_id = url_args.get("survey_id", "")
+  django_hostname = os.environ.get("DJANGOHOSTNAME")
+  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
+  login_url = f"https://{django_hostname}/accounts/login/"
+
+  token = url_args.get("token")
+
+  intro_screen
+  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  if validate_status != 200:
+     invalid_token_screen
+  else:
+    session_info = json.loads(validate_content)
+    guest_member = session_info.get("boardmember_id")
+    if guest_member:
+      redirect_url = "https://www.beyondcsrd.se"
+
+  # Get more query params
+  organisation_id = url_args.get("organisation", "")
+  target_date = url_args.get("target_date")
+  external_organisation = url_args.get("external_organisation")
+  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
+  list_id = url_args.get("list_id", "optional_default_list_id")
+  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  survey_data = []
+  survey_data.append({'name': 'Are all people in the undertaking&#x27;s own workforce who could be materially impacted by the undertaking included in the scope of its disclosure under ESRS 2? These material impacts shall include impacts that are connected with the undertaking’s own operations and its value chain, including through its products or services, as well as through its business relationships.', 'value': ESRS_2_SBM_3_1 if ESRS_2_SBM_3_1!='None' else '', 'id': 'ESRS_2_SBM_3_1', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Provide a brief description of the types of employees and non-employees in the undertaking&#x27;s own workforce subject to material impacts by its operations, and specify whether they are employees, self-employed people, or people provided by third party undertakings primarily engaged in employment activities.', 'value': ESRS_2_SBM_3_2, 'id': 'ESRS_2_SBM_3_2', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose any identified material negative impacts by operations on the undertaking&#x27;s own workforce.', 'value': ESRS_2_SBM_3_3 if ESRS_2_SBM_3_3!='None' else '', 'id': 'ESRS_2_SBM_3_3', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose the activities that result in the positive impacts, the types of employees and non-employees in its own workforce that are positively affected or could be positively affected; the undertaking may also disclose whether the positive impacts occur in specific countries or regions.', 'value': ESRS_2_SBM_3_4, 'id': 'ESRS_2_SBM_3_4', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe the undertaking&#x27;s material risks and opportunities arising from impacts and dependencies on its own workforce?', 'value': ESRS_2_SBM_3_5, 'id': 'ESRS_2_SBM_3_5', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe any material impacts the undertaking has identified on its own workforce that may arise from transition plans for reducing negative impacts on the environment and achieving greener and climate- neutral operations.', 'value': ESRS_2_SBM_3_6, 'id': 'ESRS_2_SBM_3_6', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please decribe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)?', 'value': ESRS_2_SBM_3_7, 'id': 'ESRS_2_SBM_3_7', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe if the undertaking has identified any operations at significant risk of incidents of forced labour or compulsory labour in terms of countries or geographic areas with operations considered at risk?', 'value': ESRS_2_SBM_3_8, 'id': 'ESRS_2_SBM_3_8', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of type of operation (such as manufacturing plant) that the undertaking has identified.', 'value': ESRS_2_SBM_3_9, 'id': 'ESRS_2_SBM_3_9', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of countries or geographic areas with operations considered at risk identified by the operations.', 'value': ESRS_2_SBM_3_10, 'id': 'ESRS_2_SBM_3_10', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe how the undertaking has developed an understanding of how people with particular characteristics, those working in particular contexts, or those undertaking particular activities may be at greater risk of harm.', 'value': ESRS_2_SBM_3_11, 'id': 'ESRS_2_SBM_3_11', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Does any of its material risks and opportunities arising from impacts and dependencies on people in its own workforce relate to specific groups of people rather than to all of its own workforce?', 'value': ESRS_2_SBM_3_12 if ESRS_2_SBM_3_12!='None' else '', 'id': 'ESRS_2_SBM_3_12', 'answer_type': 'Yes/No/Partly'})
+  if not defined('ESRS_2_SBM_3_13'):
+    define('ESRS_2_SBM_3_13', '_n/a_')
+  survey_data.append({'name': 'Please disclose what risks and opportunities that arise from impacts and dependencies on people in the undertaking&#x27;s own workforce related to specific groups of people rather than to all of its own workforce.', 'value': ESRS_2_SBM_3_13, 'id': 'ESRS_2_SBM_3_13', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_2_SBM_3_12', 'condition_criteria': 'Yes/Partly'})
+
+  card_title = 'esrs-2-sbm-3'
+  card_description = ''
+  # Description section in the wekan board - need to be composed with markdown and be populated with datapartner_url from the intervfile_uploadsiew.
+  card_title = f"{card_title}"
+  card_description = f"{card_description}"
+  
+  email_title = 'esrs-2-sbm-3'
+  #! Email compose for outgoing email.
+  email_body = f"Dear Partner, <br> <br> This is an automated message to confirm we have recieved the form - {email_title}.  <br> <br> Best regards <br> reportAll Team."
+  
+  email_data = [
+      {
+          "subject": email_title,
+          "body": email_body,
+          "recipients": [],
+          "from": "info@reportall.se",
+      }
+  ]
+
+  survey_data_ids = [d['id'] for d in survey_data]
+  survey_analytics = []
+  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['ESRS_2_SBM_3_1', 'ESRS_2_SBM_3_2', 'ESRS_2_SBM_3_3', 'ESRS_2_SBM_3_4', 'ESRS_2_SBM_3_5', 'ESRS_2_SBM_3_6', 'ESRS_2_SBM_3_7', 'ESRS_2_SBM_3_8', 'ESRS_2_SBM_3_9', 'ESRS_2_SBM_3_10', 'ESRS_2_SBM_3_11', 'ESRS_2_SBM_3_12', 'ESRS_2_SBM_3_13']])]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F1", "name": "Description of types of employees and non-employees in the undertaking's own workforce", "values": ["ESRS_2_SBM_3_2"], "labels": [""], "dtypes": ["OPEN_LARGE"]})
+
+  survey_analytics_dq = []
+  for sa_idx, sa in enumerate(survey_analytics):
+    if not all([_id in survey_data_ids for _id in sa["values"]]):
+      sd_tag = []
+      sd_found = []
+      drop_sa_ids = []
+      for sd in survey_data:
+        for _id in sa["values"]:
+          if _id in sd["id"]:
+            sd_found.append(sd["id"])
+            tag = sd.get("tag")
+            if tag:
+              sd_tag.append(tag)
+            break
+        if len(sd_found) == len(sa["values"]) and len(sd_found)>0:   # Found all sa values in survey_data
+          dynamic_sa_dict = survey_analytics[sa_idx].copy()
+          dynamic_sa_dict["id"] = dynamic_sa_dict["id"] + f"__DQ{sd_found[0].split('__DQ')[-1]}"
+          dynamic_sa_dict["values"] = sd_found
+          dynamic_sa_dict["tag"] = next(iter(set(sd_tag)), None)
+          survey_analytics_dq.append(dynamic_sa_dict)
+          drop_sa_ids.append(sa_idx)
+          sd_found = []
+          sd_tag = []
+    else:
+      survey_analytics_dq.append(sa)
+
+
+  data = {
+      "board_id": board_id,
+      "survey_id": survey_id,
+      "organisation_id": organisation_id,
+      "external_organisation": external_organisation,
+      "survey_data": survey_data,
+      "survey_analytics": survey_analytics_dq,
+      "survey_uploads": [],
+      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
+      "target_date": target_date,
+      "wekan_board": wekan_board,
+      "list_id": list_id,
+      "swimlane_id": swimlane_id,
+      "wekan_data": {
+          "card_title": card_title,
+          "card_description": card_description
+  
+      },
+      # "email_data": email_data,
+      "aux_data": [
+      ],
+      "guest_member": guest_member,
+    }
+
+
+  # send data to django
+  final_screen
+  reponse_status_code, response_content = store_interview_results(data)
+  if reponse_status_code == 200:
+    define('error_screen', False) 
+    command('exit', url=redirect_url)
+  else:
+    error_screen
+--- 
+progress: 0
+question: |
+  Are all people in the undertaking&#x27;s own workforce who could be materially impacted by the undertaking included in the scope of its disclosure under ESRS 2? These material impacts shall include impacts that are connected with the undertaking’s own operations and its value chain, including through its products or services, as well as through its business relationships. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    ‘Own workforce’ includes workers who are in an employment relationship with the undertaking (‘employees’) and non-employee workers who are either individual contractors supplying labour to the undertaking (‘self-employed workers’) or workers provided by undertakings primarily engaged in ‘employment activities’. (NACE Code N78) AR 6.
+    Impacts on the undertaking’s own workforce can originate in its strategy or business model in a number of different ways. For example, impacts may relate to the undertaking’s value proposition (such as providing lowest cost products or services, or high-speed delivery, in ways that put pressure on labour rights in its own operations), or its cost structure and the revenue model (such as shifting inventory risk to suppliers, with knock-on effects on the labour rights of people who work for them).
+    AR 7.
+    Impacts on the undertaking’s own workforce that originate in the strategy or business model can also bring material risks to the undertaking. For example, risks arise if some people in the workforce are at risk of forced labour, and the undertaking is importing products into countries where the law allows for the confiscation of imported goods that are suspected of being made with forced labour. An example of opportunities for the undertaking may result from providing opportunities for the workforce such as job creation and upskilling in the context of a “just transition”. Another example, in the context of a pandemic or other severe health crisis, relates to the undertaking potentially relying on contingent labour with little to no access to sick care and health benefits that may face severe operational and business continuity risks as workers have no choice but to keep working while sick, further exacerbating the spread of the disease and causing major supply chain breakdowns. Reputational and business opportunity risks linked to the exploitation of lowskilled, low-paid workers in sourcing geographies with minimal protections for them are also increasing with media backlash and consumer preferences moving to more ethically sourced or sustainable goods.
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_1
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+--- 
+progress: 9
+question: |
+  Provide a brief description of the types of employees and non-employees in the undertaking&#x27;s own workforce subject to material impacts by its operations, and specify whether they are employees, self-employed people, or people provided by third party undertakings primarily engaged in employment activities. 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_2
+    datatype: area
+    required: false
+--- 
+progress: 17
+question: |
+  Please disclose any identified material negative impacts by operations on the undertaking&#x27;s own workforce. 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_3
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+--- 
+progress: 25
+question: |
+  Please disclose the activities that result in the positive impacts, the types of employees and non-employees in its own workforce that are positively affected or could be positively affected; the undertaking may also disclose whether the positive impacts occur in specific countries or regions. 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_4
+    datatype: area
+    required: false
+--- 
+progress: 34
+question: |
+  Please describe the undertaking&#x27;s material risks and opportunities arising from impacts and dependencies on its own workforce? 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_5
+    datatype: area
+    required: false
+--- 
+progress: 42
+question: |
+  Please describe any material impacts the undertaking has identified on its own workforce that may arise from transition plans for reducing negative impacts on the environment and achieving greener and climate- neutral operations. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    This include information on the impacts on own workforce caused by the undertaking’s plans and actions to reduce carbon emissions in line with international agreements. Impacts, risks and opportunities include restructuring and employment loss as well as opportunities arising from job creation and reskilling or upskilling.
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_6
+    datatype: area
+    required: false
+--- 
+progress: 50
+question: |
+  Please decribe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)? 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_7
+    datatype: area
+    required: false
+--- 
+progress: 59
+question: |
+  Please describe if the undertaking has identified any operations at significant risk of incidents of forced labour or compulsory labour in terms of countries or geographic areas with operations considered at risk? 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_8
+    datatype: area
+    required: false
+--- 
+progress: 67
+question: |
+  Please describe any operations at significant risk of incidents of child labour in terms of type of operation (such as manufacturing plant) that the undertaking has identified. 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_9
+    datatype: area
+    required: false
+--- 
+progress: 75
+question: |
+  Please describe any operations at significant risk of incidents of child labour in terms of countries or geographic areas with operations considered at risk identified by the operations. 
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_10
+    datatype: area
+    required: false
+--- 
+progress: 84
+question: |
+  Please describe how the undertaking has developed an understanding of how people with particular characteristics, those working in particular contexts, or those undertaking particular activities may be at greater risk of harm. 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    AR 8.
+    Examples of particular characteristics of people in the undertaking’s own workforce that may be considered by the undertaking when responding to paragraph 15 relate to young people that may be more susceptible to impacts on their physical and mental development,
+    or women in a context where women are routinely discriminated against in the terms and conditions of work, or migrants in a context where the market for the supply of labour is poorly regulated and workers are routinely charged recruitment fees. For some people in the
+    workforce, the inherent nature of the activity that they are required to undertake may put them at risk (for example, people required to handle chemicals or operate certain equipment or low paid employees who are on “zero hours” contracts).
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_11
+    datatype: area
+    required: false
+--- 
+progress: 92
+question: |
+  Does any of its material risks and opportunities arising from impacts and dependencies on people in its own workforce relate to specific groups of people rather than to all of its own workforce? 
+help:
+  label: Help?
+  heading: <BR><h6>Explanation</h6>
+  content: |
+    For example, a general pay cut, or training offered to all people in its own workforce. Groups of people are for example, particular age groups, or people working in a particular factory or country. AR 9. With regard to paragraph 16, material risks could also arise because of the undertaking’s dependency on its own workforce where low-likelihood but high-impact events may trigger financial effects; for example, where a global pandemic leads to severe health impacts on the undertaking’s workforce resulting in major disruptions to production and distribution. Other examples of risk related to the undertaking’s dependency on its workforce include a shortage in skilled workers or political decisions or legislation affecting its own operations and own workforce.
+back button: True
+fields:
+  - no label: ESRS_2_SBM_3_12
+    input type: radio
+    required: false
+    choices:
+      - Yes
+      - No
+      - Partly
+  - "Please disclose what risks and opportunities that arise from impacts and dependencies on people in the undertaking&#x27;s own workforce related to specific groups of people rather than to all of its own workforce.": ESRS_2_SBM_3_13
+    required: false
+    datatype: area
+    js show if: |
+      ['Yes', 'Partly'].includes(val('ESRS_2_SBM_3_12'))
+---
+#! Response report before submission
+progress: 100
+field: final_screen
+back button: True
+question: |
+  Congratulations!
+subquestion: |
+  All questions have been addressed. Press the submit button below to send in your answers.
+continue button label: Submit answers!
+
+---
+#! Response report before submission
+event: error_screen
+prevent going back: True
+question: |
+  Something went wrong when submitting your answers. 
+subquestion: |  
+  Please try again or contact <a href="mailto:info@beyondcsrd.se">info@beyondcsrd.se</a> for help.
+under: |
+  Details: ${ response_content.decode() }
+buttons:
+  Exit: exit
+
+---
+
+event: require_login_screen
+question: |
+  Oops! You have been logged out. Please login again.
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---
+
+event: invalid_token_screen
+question: |
+  Your survey token is invalid. Please contact the administrator to request a new url. 
+subquestion: |
+  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
+
+---

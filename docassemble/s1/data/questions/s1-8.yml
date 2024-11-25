@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-8
+    S1-8
   short title: |
-    The undertaking shall disclose information on the extent to which the working conditions and terms of employment of its employees are determined or influenced by collective bargaining agreements and on the extent to which its employees are represented in social dialogue in the European Economic Area (EEA) at the establishment and European level. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-8 Own Workforce&#58; Collective bargaining coverage and social dialogue
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall disclose information on the extent to which the working conditions and terms of employment of its employees are determined or influenced by collective bargaining agreements and on the extent to which its employees are represented in social dialogue in the European Economic Area (EEA) at the establishment and European level. All questions marked with * are voluntary. Questions marked with *** voluntary for one year for non-EEA countries. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,9 +25,9 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-8 Own Workforce: Collective bargaining coverage and social dialogue
+  Social 1-8 Own Workforce&#58; Collective bargaining coverage and social dialogue
 subquestion: |
-  The undertaking shall disclose information on the extent to which the working conditions and terms of employment of its employees are determined or influenced by collective bargaining agreements and on the extent to which its employees are represented in social dialogue in the European Economic Area (EEA) at the establishment and European level. All questions marked with * are voluntary. If unsure, leave blank.
+  The undertaking shall disclose information on the extent to which the working conditions and terms of employment of its employees are determined or influenced by collective bargaining agreements and on the extent to which its employees are represented in social dialogue in the European Economic Area (EEA) at the establishment and European level. All questions marked with * are voluntary. Questions marked with *** voluntary for one year for non-EEA countries. If unsure, leave blank.
 
   To get started, press **Continue**.
 ---
@@ -43,40 +43,35 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
-  survey_data.append({'name': 'How many of the undertaking&#x27;s employees are covered by collective bargaining agreements?', 'value': S1_8_1, 'id': 'S1_8_1', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA).', 'value': S1_8_2, 'id': 'S1_8_2', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region.', 'value': S1_8_3, 'id': 'S1_8_3', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.*', 'value': S1_8_4, 'id': 'S1_8_4', 'answer_type': 'OPEN'})
-  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.*', 'value': S1_8_5, 'id': 'S1_8_5', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives.', 'value': S1_8_6, 'id': 'S1_8_6', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council.', 'value': S1_8_7, 'id': 'S1_8_7', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region.', 'value': S1_8_8, 'id': 'S1_8_8', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'How many of the undertaking&#x27;s employees are covered by collective bargaining agreements?***', 'value': S1_8_1, 'id': 'S1_8_1', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA).***', 'value': S1_8_2, 'id': 'S1_8_2', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region. ***', 'value': S1_8_3, 'id': 'S1_8_3', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.* ***', 'value': S1_8_4, 'id': 'S1_8_4', 'answer_type': 'OPEN'})
+  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.* ***', 'value': S1_8_5, 'id': 'S1_8_5', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives.***', 'value': S1_8_6, 'id': 'S1_8_6', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council.***', 'value': S1_8_7, 'id': 'S1_8_7', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region.***', 'value': S1_8_8, 'id': 'S1_8_8', 'answer_type': 'OPEN_LARGE'})
 
   card_title = 's1-8'
   card_description = ''
@@ -99,8 +94,8 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_8_1', 'S1_8_2', 'S1_8_3', 'S1_8_6', 'S1_8_7', 'S1_8_8']])]})
-  survey_analytics.append({"id": "S1_8_F1", "name": "Collective Bargaining", "values": ["S1_8_1", "S1_8_2", "S1_8_3", "S1_8_6", "S1_8_8"], "labels": ["Percentage covered", "Percentage within coverage rate of country", "Percentage covered outside EEA", "Percentage of employee in country covered by workers' representatives", "Coverage outside EEA"], "dtypes": ["PERCENT", "PERCENT", "PERCENT", "PERCENT", "OPEN_LARGE"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_8_1", "S1_8_2", "S1_8_3", "S1_8_6", "S1_8_7", "S1_8_8"], "dtypes": []})
+  survey_analytics.append({"id": "S1_8_F1", "name": "Collective Bargaining", "values": ["S1_8_1", "S1_8_2", "S1_8_3", "S1_8_6", "S1_8_8"], "dtypes": ["PERCENT", "PERCENT", "PERCENT", "PERCENT", "OPEN_LARGE"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -132,16 +127,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -165,7 +155,7 @@ code: |
 --- 
 progress: 0
 question: |
-  How many of the undertaking&#x27;s employees are covered by collective bargaining agreements? 
+  How many of the undertaking&#x27;s employees are covered by collective bargaining agreements?*** 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -182,7 +172,7 @@ fields:
 --- 
 progress: 13
 question: |
-  Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA). 
+  Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA).*** 
 back button: True
 fields:
   - no label: S1_8_2
@@ -191,7 +181,7 @@ fields:
 --- 
 progress: 25
 question: |
-  Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region. 
+  Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region. *** 
 back button: True
 fields:
   - no label: S1_8_3
@@ -200,7 +190,7 @@ fields:
 --- 
 progress: 38
 question: |
-  Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.* 
+  Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.* *** 
 back button: True
 fields:
   - no label: S1_8_4
@@ -209,7 +199,7 @@ fields:
 --- 
 progress: 50
 question: |
-  Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.* 
+  Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.* *** 
 back button: True
 fields:
   - no label: S1_8_5
@@ -218,7 +208,7 @@ fields:
 --- 
 progress: 63
 question: |
-  Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives. 
+  Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives.*** 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -236,7 +226,7 @@ fields:
 --- 
 progress: 75
 question: |
-  Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council. 
+  Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council.*** 
 back button: True
 fields:
   - no label: S1_8_7
@@ -245,12 +235,21 @@ fields:
 --- 
 progress: 88
 question: |
-  Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region. 
+  Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region.*** 
 back button: True
 fields:
   - no label: S1_8_8
     datatype: area
     required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

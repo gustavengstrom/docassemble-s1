@@ -1,12 +1,12 @@
 metadata:
   title: |
-    esrs-2-sbm-3
+    ESRS-2-SBM-3
   short title: |
-    The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank.
+    Strategy and Business Model (SBM)&#58; Material impacts, risks and opportunities and their interaction with strategy and business model
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,7 +25,7 @@ features:
 ---
 field: intro_screen
 question: |
-  Strategy and Business Model (SBM): Material impacts, risks and opportunities and their interaction with strategy and business model
+  Strategy and Business Model (SBM)&#58; Material impacts, risks and opportunities and their interaction with strategy and business model
 subquestion: |
   The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank.
 
@@ -76,30 +76,25 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
   survey_data.append({'name': 'Are all people in the undertaking&#x27;s own workforce who could be materially impacted by the undertaking included in the scope of its disclosure under ESRS 2? These material impacts shall include impacts that are connected with the undertaking’s own operations and its value chain, including through its products or services, as well as through its business relationships.', 'value': ESRS_2_SBM_3_1 if ESRS_2_SBM_3_1!='None' else '', 'id': 'ESRS_2_SBM_3_1', 'answer_type': 'Yes/No/Partly'})
@@ -108,7 +103,7 @@ code: |
   survey_data.append({'name': 'Please disclose the activities that result in the positive impacts, the types of employees and non-employees in its own workforce that are positively affected or could be positively affected; the undertaking may also disclose whether the positive impacts occur in specific countries or regions.', 'value': ESRS_2_SBM_3_4, 'id': 'ESRS_2_SBM_3_4', 'answer_type': 'OPEN_LARGE'})
   survey_data.append({'name': 'Please describe the undertaking&#x27;s material risks and opportunities arising from impacts and dependencies on its own workforce?', 'value': ESRS_2_SBM_3_5, 'id': 'ESRS_2_SBM_3_5', 'answer_type': 'OPEN_LARGE'})
   survey_data.append({'name': 'Please describe any material impacts the undertaking has identified on its own workforce that may arise from transition plans for reducing negative impacts on the environment and achieving greener and climate- neutral operations.', 'value': ESRS_2_SBM_3_6, 'id': 'ESRS_2_SBM_3_6', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please decribe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)?', 'value': ESRS_2_SBM_3_7, 'id': 'ESRS_2_SBM_3_7', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)?', 'value': ESRS_2_SBM_3_7, 'id': 'ESRS_2_SBM_3_7', 'answer_type': 'OPEN_LARGE'})
   survey_data.append({'name': 'Please describe if the undertaking has identified any operations at significant risk of incidents of forced labour or compulsory labour in terms of countries or geographic areas with operations considered at risk?', 'value': ESRS_2_SBM_3_8, 'id': 'ESRS_2_SBM_3_8', 'answer_type': 'OPEN_LARGE'})
   survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of type of operation (such as manufacturing plant) that the undertaking has identified.', 'value': ESRS_2_SBM_3_9, 'id': 'ESRS_2_SBM_3_9', 'answer_type': 'OPEN_LARGE'})
   survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of countries or geographic areas with operations considered at risk identified by the operations.', 'value': ESRS_2_SBM_3_10, 'id': 'ESRS_2_SBM_3_10', 'answer_type': 'OPEN_LARGE'})
@@ -139,8 +134,19 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['ESRS_2_SBM_3_1', 'ESRS_2_SBM_3_2', 'ESRS_2_SBM_3_3', 'ESRS_2_SBM_3_4', 'ESRS_2_SBM_3_5', 'ESRS_2_SBM_3_6', 'ESRS_2_SBM_3_7', 'ESRS_2_SBM_3_8', 'ESRS_2_SBM_3_9', 'ESRS_2_SBM_3_10', 'ESRS_2_SBM_3_11', 'ESRS_2_SBM_3_12', 'ESRS_2_SBM_3_13']])]})
-  survey_analytics.append({"id": "ESRS_2_SBM_3_F1", "name": "Description of types of employees and non-employees in the undertaking's own workforce", "values": ["ESRS_2_SBM_3_2"], "labels": [""], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["ESRS_2_SBM_3_1", "ESRS_2_SBM_3_2", "ESRS_2_SBM_3_3", "ESRS_2_SBM_3_4", "ESRS_2_SBM_3_5", "ESRS_2_SBM_3_6", "ESRS_2_SBM_3_7", "ESRS_2_SBM_3_8", "ESRS_2_SBM_3_9", "ESRS_2_SBM_3_10", "ESRS_2_SBM_3_11", "ESRS_2_SBM_3_12", "ESRS_2_SBM_3_13"], "dtypes": []})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F1", "name": "Coverage", "values": ["ESRS_2_SBM_3_1"], "dtypes": ["YES/NO/PARTLY"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F2", "name": "Type of employees", "values": ["ESRS_2_SBM_3_13"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F3", "name": "Negative impacts", "values": ["ESRS_2_SBM_3_3"], "dtypes": ["YES/NO/PARTLY"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F4", "name": "Positive impacts", "values": ["ESRS_2_SBM_3_4"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F5", "name": "Material risks and opportunities", "values": ["ESRS_2_SBM_3_5"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F6", "name": "Material impacts from transition plans", "values": ["ESRS_2_SBM_3_6"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F7", "name": "Risks of forced or compulsory labour- type of operation", "values": ["ESRS_2_SBM_3_7"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F8", "name": "Risks of forced or compulsory labour- geographic area", "values": ["ESRS_2_SBM_3_8"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F9", "name": "Risks of child labour- type of operations", "values": ["ESRS_2_SBM_3_9"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F10", "name": "Risks of child labour- geographic area", "values": ["ESRS_2_SBM_3_10"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F11", "name": "Understadning of specific circumstances", "values": ["ESRS_2_SBM_3_11"], "dtypes": ["OPEN_LARGE"]})
+  survey_analytics.append({"id": "ESRS_2_SBM_3_F12", "name": "Impacts and dependencies", "values": ["ESRS_2_SBM_3_12"], "dtypes": ["YES/NO/PARTLY"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -172,16 +178,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -280,7 +281,7 @@ fields:
 --- 
 progress: 50
 question: |
-  Please decribe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)? 
+  Please describe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)? 
 back button: True
 fields:
   - no label: ESRS_2_SBM_3_7
@@ -353,6 +354,15 @@ fields:
     datatype: area
     js show if: |
       ['Yes', 'Partly'].includes(val('ESRS_2_SBM_3_12'))
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

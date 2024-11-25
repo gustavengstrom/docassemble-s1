@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-13
+    S1-13
   short title: |
-    The undertaking shall disclose the extent to which training and skills development is provided to its employees. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-13 Own Workforce&#58; Training and skills development metrics
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall disclose the extent to which training and skills development is provided to its employees. All questions marked with * are voluntary. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,7 +25,7 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-13 Own Workforce: Training and skills development metrics
+  Social 1-13 Own Workforce&#58; Training and skills development metrics
 subquestion: |
   The undertaking shall disclose the extent to which training and skills development is provided to its employees. All questions marked with * are voluntary. If unsure, leave blank.
 
@@ -43,39 +43,40 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
   survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews.', 'value': S1_13_1, 'id': 'S1_13_1', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews by gender.', 'value': S1_13_2, 'id': 'S1_13_2', 'answer_type': 'OPEN'})
-  survey_data.append({'name': 'Please disclose the average number of training hours per employee.', 'value': S1_13_3, 'id': 'S1_13_3', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number of training hours by gender.', 'value': S1_13_4, 'id': 'S1_13_4', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose breakdowns by employee category for the percentage of employees that participated in regular performance and career development.*', 'value': S1_13_5, 'id': 'S1_13_5', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the average number of training hours per employee by employee category.*', 'value': S1_13_6, 'id': 'S1_13_6', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the percentage of non-employees that participated in regular performance and career development reviews.*', 'value': S1_13_7, 'id': 'S1_13_7', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- female.', 'value': S1_13_2, 'id': 'S1_13_2', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- male.', 'value': S1_13_3, 'id': 'S1_13_3', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- other.', 'value': S1_13_4, 'id': 'S1_13_4', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- not disclosed.', 'value': S1_13_5, 'id': 'S1_13_5', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the average number of training hours per employee.', 'value': S1_13_6, 'id': 'S1_13_6', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the average number of training hours by gender- female.', 'value': S1_13_7, 'id': 'S1_13_7', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the average number of training hours by gender- male.', 'value': S1_13_8, 'id': 'S1_13_8', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the average number of training hours by gender- other.', 'value': S1_13_9, 'id': 'S1_13_9', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the average number of training hours by gender- not disclosed.', 'value': S1_13_10, 'id': 'S1_13_10', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose breakdowns by employee category for the percentage of employees that participated in regular performance and career development.*', 'value': S1_13_11, 'id': 'S1_13_11', 'answer_type': 'PERCENT'})
+  survey_data.append({'name': 'Please disclose the average number of training hours per employee by employee category.*', 'value': S1_13_12, 'id': 'S1_13_12', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the percentage of non-employees that participated in regular performance and career development reviews.*', 'value': S1_13_13, 'id': 'S1_13_13', 'answer_type': 'PERCENT'})
 
   card_title = 's1-13'
   card_description = ''
@@ -98,7 +99,8 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_13_1', 'S1_13_2', 'S1_13_3', 'S1_13_4']])]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_13_1", "S1_13_2", "S1_13_3", "S1_13_4", "S1_13_5", "S1_13_6", "S1_13_7", "S1_13_8", "S1_13_9", "S1_13_10"], "dtypes": []})
+  survey_analytics.append({"id": "S1_13_F1", "name": "Training and skills development metrics", "values": ["S1_13_1", "S1_13_2", "S1_13_3", "S1_13_4", "S1_13_5", "S1_13_6", "S1_13_7", "S1_13_8", "S1_13_9"], "dtypes": ["PERCENT", "PERCENT", "PERCENT", "PERCENT", "PERCENT", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -130,16 +132,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -179,59 +176,122 @@ fields:
     datatype: number
     required: false
 --- 
-progress: 15
+progress: 8
 question: |
-  Please disclose the percentage of employees that participated in regular performance and career development reviews by gender. 
+  Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- female. 
 back button: True
 fields:
   - no label: S1_13_2
-    datatype: text
+    datatype: number
     required: false
 --- 
-progress: 29
+progress: 16
 question: |
-  Please disclose the average number of training hours per employee. 
+  Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- male. 
 back button: True
 fields:
   - no label: S1_13_3
     datatype: number
     required: false
 --- 
-progress: 43
+progress: 24
 question: |
-  Please disclose the average number of training hours by gender. 
+  Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- other. 
 back button: True
 fields:
   - no label: S1_13_4
     datatype: number
     required: false
 --- 
-progress: 58
+progress: 31
 question: |
-  Please disclose breakdowns by employee category for the percentage of employees that participated in regular performance and career development.* 
+  Please disclose the percentage of employees that participated in regular performance and career development reviews by gender- not disclosed. 
 back button: True
 fields:
   - no label: S1_13_5
     datatype: number
     required: false
 --- 
-progress: 72
+progress: 39
 question: |
-  Please disclose the average number of training hours per employee by employee category.* 
+  Please disclose the average number of training hours per employee. 
 back button: True
 fields:
   - no label: S1_13_6
     datatype: number
     required: false
 --- 
-progress: 86
+progress: 47
 question: |
-  Please disclose the percentage of non-employees that participated in regular performance and career development reviews.* 
+  Please disclose the average number of training hours by gender- female. 
 back button: True
 fields:
   - no label: S1_13_7
     datatype: number
     required: false
+--- 
+progress: 54
+question: |
+  Please disclose the average number of training hours by gender- male. 
+back button: True
+fields:
+  - no label: S1_13_8
+    datatype: number
+    required: false
+--- 
+progress: 62
+question: |
+  Please disclose the average number of training hours by gender- other. 
+back button: True
+fields:
+  - no label: S1_13_9
+    datatype: number
+    required: false
+--- 
+progress: 70
+question: |
+  Please disclose the average number of training hours by gender- not disclosed. 
+back button: True
+fields:
+  - no label: S1_13_10
+    datatype: number
+    required: false
+--- 
+progress: 77
+question: |
+  Please disclose breakdowns by employee category for the percentage of employees that participated in regular performance and career development.* 
+back button: True
+fields:
+  - no label: S1_13_11
+    datatype: number
+    required: false
+--- 
+progress: 85
+question: |
+  Please disclose the average number of training hours per employee by employee category.* 
+back button: True
+fields:
+  - no label: S1_13_12
+    datatype: number
+    required: false
+--- 
+progress: 93
+question: |
+  Please disclose the percentage of non-employees that participated in regular performance and career development reviews.* 
+back button: True
+fields:
+  - no label: S1_13_13
+    datatype: number
+    required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

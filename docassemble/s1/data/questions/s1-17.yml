@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-17
+    S1-17
   short title: |
-    The undertaking shall disclose the number of work-related incidents and/or complaints and severe human rights impacts within its own workforce, and any related material fines, sanctions or compensation for the reporting period. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-17 Own Workforce&#58; Incidents, complaints and severe human rights impacts
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall disclose the number of work-related incidents and/or complaints and severe human rights impacts within its own workforce, and any related material fines, sanctions or compensation for the reporting period. All questions marked with * are voluntary. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,7 +25,7 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-17 Own Workforce: Incidents, complaints and severe human rights impacts
+  Social 1-17 Own Workforce&#58; Incidents, complaints and severe human rights impacts
 subquestion: |
   The undertaking shall disclose the number of work-related incidents and/or complaints and severe human rights impacts within its own workforce, and any related material fines, sanctions or compensation for the reporting period. All questions marked with * are voluntary. If unsure, leave blank.
 
@@ -43,30 +43,25 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
   survey_data.append({'name': 'Please disclose the number of incidents of discrimination, including harassment, reported in the reporting period?', 'value': S1_17_1, 'id': 'S1_17_1', 'answer_type': 'INTEGER'})
@@ -75,7 +70,7 @@ code: |
   survey_data.append({'name': 'Please disclose the amount of material fines, penalties, and compensation for damages as result of violations regarding social and human rights factors.', 'value': S1_17_4, 'id': 'S1_17_4', 'answer_type': 'CURRENCY'})
   survey_data.append({'name': 'Please disclose information about reconciliation of the material fines, penalties and compensation for damages as result of violations regarding social and human rights factors with most relevant amount presented in financial statements .', 'value': S1_17_5, 'id': 'S1_17_5', 'answer_type': 'OPEN'})
   survey_data.append({'name': 'Please provide contextual information necessary to understand the data and how data has been compiled (work-related grievances, incidents and complaints related to social and human rights matters).', 'value': S1_17_6, 'id': 'S1_17_6', 'answer_type': 'OPEN'})
-  survey_data.append({'name': 'Pleas state the number of severe human rights incidents connected to the undertaking’s own workforce in the reporting period.', 'value': S1_17_7, 'id': 'S1_17_7', 'answer_type': 'INTEGER'})
+  survey_data.append({'name': 'Please state the number of severe human rights incidents connected to the undertaking’s own workforce in the reporting period.', 'value': S1_17_7, 'id': 'S1_17_7', 'answer_type': 'INTEGER'})
   survey_data.append({'name': 'Please disclose the number of, severe human rights incidents that are cases of non-respect of the UN Guiding Principles on Business and Human Rights, ILO Declaration on Fundamental Principles and Rights at Work or OECD Guidelines for Multinational Enterprises.', 'value': S1_17_8, 'id': 'S1_17_8', 'answer_type': 'INTEGER'})
   survey_data.append({'name': 'Have any severe human rights issues and incidents connected to own workforce occurred?', 'value': S1_17_9 if S1_17_9!='None' else '', 'id': 'S1_17_9', 'answer_type': 'Yes/No/Partly'})
   survey_data.append({'name': 'Please disclose the amount of material fines, penalties, and compensation for severe human rights issues and incidents connected to own workforce.', 'value': S1_17_10, 'id': 'S1_17_10', 'answer_type': 'CURRENCY'})
@@ -104,8 +99,8 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_17_1', 'S1_17_2', 'S1_17_3', 'S1_17_4', 'S1_17_5', 'S1_17_6', 'S1_17_7', 'S1_17_8', 'S1_17_9', 'S1_17_10', 'S1_17_11']])]})
-  survey_analytics.append({"id": "S1_17_F1", "name": "Incidents, complaints and severe human rights impacts", "values": ["S1_17_1", "S1_17_2", "S1_17_3", "S1_17_4", "S1_17_7", "S1_17_8", "S1_17_10"], "labels": ["Number of incidents of discrimination", "Complaints filed through channels for people in own workforce to raise concerns", "Complaints filed to National Contact Points for OECD Multinational Enterprises", "Fines paid for discrimination", "Severe human rights incidents connected to the own workforce", "Severe human rights incidents that are cases of non-respect of the UN Guiding Principles on Business and Human Rights, ILO Declaration on Fundamental Principles and Rights at Work or OECD Guidelines for Multinational Enterprises", "Fines paid for human rights violations"], "dtypes": ["INTEGER", "INTEGER", "INTEGER", "CURRENCY", "INTEGER", "INTEGER", "CURRENCY"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_17_1", "S1_17_2", "S1_17_3", "S1_17_4", "S1_17_5", "S1_17_6", "S1_17_7", "S1_17_8", "S1_17_9", "S1_17_10", "S1_17_11"], "dtypes": []})
+  survey_analytics.append({"id": "S1_17_F1", "name": "Incidents, complaints and severe human rights impacts", "values": ["S1_17_1", "S1_17_2", "S1_17_3", "S1_17_4", "S1_17_7", "S1_17_8", "S1_17_10"], "dtypes": ["INTEGER", "INTEGER", "INTEGER", "CURRENCY", "INTEGER", "INTEGER", "CURRENCY"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -137,16 +132,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -356,7 +346,7 @@ fields:
 --- 
 progress: 47
 question: |
-  Pleas state the number of severe human rights incidents connected to the undertaking’s own workforce in the reporting period. 
+  Please state the number of severe human rights incidents connected to the undertaking’s own workforce in the reporting period. 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -479,6 +469,15 @@ fields:
   - no label: S1_17_13
     datatype: integer
     required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-16
+    S1-16
   short title: |
-    The undertaking shall disclose the percentage gap in pay between its female and male employees and the ratio between the remuneration of its highest paid individual and the median remuneration for its employees. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-16 Own Workforce&#58; Remuneration metrics (pay gap and total remuneration)
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall disclose the percentage gap in pay between its female and male employees and the ratio between the remuneration of its highest paid individual and the median remuneration for its employees. All questions marked with * are voluntary. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,7 +25,7 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-16 Own Workforce: Remuneration metrics (pay gap and total remuneration)
+  Social 1-16 Own Workforce&#58; Remuneration metrics (pay gap and total remuneration)
 subquestion: |
   The undertaking shall disclose the percentage gap in pay between its female and male employees and the ratio between the remuneration of its highest paid individual and the median remuneration for its employees. All questions marked with * are voluntary. If unsure, leave blank.
 
@@ -43,30 +43,25 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
   survey_data.append({'name': 'What is the gender pay gap, defined as the difference of average pay levels between female and male employees, expressed as percentage of the average pay level of male employees of the undertaking?', 'value': S1_16_1, 'id': 'S1_16_1', 'answer_type': 'PERCENT'})
@@ -98,9 +93,9 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_16_1', 'S1_16_2', 'S1_16_3']])]})
-  survey_analytics.append({"id": "S1_16_F1", "name": "Gender pay gap as the difference of average pay levels between female and male employees in percent", "values": ["S1_16_1"], "labels": ["Gender pay gap"], "dtypes": ["PERCENT"]})
-  survey_analytics.append({"id": "S1_16_F2", "name": "Annual total remuneration ratio of the highest paid individual to the median annual total remuneration for all employees", "values": ["S1_16_2"], "labels": ["Remuneration ratio"], "dtypes": ["PERCENT"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_16_1", "S1_16_2", "S1_16_3"], "dtypes": []})
+  survey_analytics.append({"id": "S1_16_F1", "name": "Gender pay gap as the difference of average pay levels between female and male employees in percent", "values": ["S1_16_1"], "dtypes": ["PERCENT"]})
+  survey_analytics.append({"id": "S1_16_F2", "name": "Annual total remuneration ratio of the highest paid individual to the median annual total remuneration for all employees", "values": ["S1_16_2"], "dtypes": ["PERCENT"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -132,16 +127,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -267,6 +257,15 @@ fields:
   - no label: S1_16_7
     datatype: area
     required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

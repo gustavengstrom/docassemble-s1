@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-7
+    S1-7
   short title: |
-    The undertaking shall describe key characteristics of non-employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-7 Own Workforce&#58; Characteristics of non-employees in the undertaking’s own workforce
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall describe key characteristics of non-employees in its own workforce. All questions marked with * are voluntary.  Questions marked with ** are voluntary for the first year of reporting. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,9 +25,9 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-7 Own Workforce: Characteristics of non-employees in the undertaking’s own workforce
+  Social 1-7 Own Workforce&#58; Characteristics of non-employees in the undertaking’s own workforce
 subquestion: |
-  The undertaking shall describe key characteristics of non-employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank.
+  The undertaking shall describe key characteristics of non-employees in its own workforce. All questions marked with * are voluntary.  Questions marked with ** are voluntary for the first year of reporting. If unsure, leave blank.
 
   To get started, press **Continue**.
 ---
@@ -43,42 +43,37 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
-  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce.', 'value': S1_7_1, 'id': 'S1_7_1', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce - self employed people.', 'value': S1_7_2, 'id': 'S1_7_2', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce - people provided by undertakings primarily engaged in employment activities.', 'value': S1_7_3, 'id': 'S1_7_3', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce. **', 'value': S1_7_1, 'id': 'S1_7_1', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce - self employed people. **', 'value': S1_7_2, 'id': 'S1_7_2', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of non-employees in the undertaking’s own workforce - people provided by undertakings primarily engaged in employment activities. **', 'value': S1_7_3, 'id': 'S1_7_3', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose if the undertaking does not have non-employees in own workforce.*', 'value': S1_7_4, 'id': 'S1_7_4', 'answer_type': 'OPEN'})
   survey_data.append({'name': 'Please disclose the most common types of non-employees (for example, self-employed people, people provided by undertakings primarily engaged in employment activities, and other types relevant to the undertaking), their relationship with the undertaking, and the type of work that they perform.*', 'value': S1_7_5, 'id': 'S1_7_5', 'answer_type': 'OPEN'})
-  survey_data.append({'name': 'Please describe the methodologies and assumptions used to compile data (non-employees).', 'value': S1_7_6, 'id': 'S1_7_6', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose if non-employees numbers are reported in head count or full time equivalent.', 'value': S1_7_7 if S1_7_7!='None' else '', 'id': 'S1_7_7', 'answer_type': 'Head Count/Fte'})
-  survey_data.append({'name': 'Please disclose when non-employees numbers are reported.', 'value': S1_7_8 if S1_7_8!='None' else '', 'id': 'S1_7_8', 'answer_type': 'At End Of Reporting Period/Average/Other Methodology'})
-  survey_data.append({'name': 'Please provide contextual information necessary to understand the data (non-employee workers).', 'value': S1_7_9, 'id': 'S1_7_9', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe basis of preparation of non-employees estimated number.', 'value': S1_7_10, 'id': 'S1_7_10', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe the methodologies and assumptions used to compile data (non-employees).**', 'value': S1_7_6, 'id': 'S1_7_6', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose if non-employees numbers are reported in head count or full time equivalent.**', 'value': S1_7_7 if S1_7_7!='None' else '', 'id': 'S1_7_7', 'answer_type': 'Head Count/Fte'})
+  survey_data.append({'name': 'Please disclose when non-employees numbers are reported. **', 'value': S1_7_8 if S1_7_8!='None' else '', 'id': 'S1_7_8', 'answer_type': 'At End Of Reporting Period/Average/Other Methodology'})
+  survey_data.append({'name': 'Please provide contextual information necessary to understand the data (non-employee workers).**', 'value': S1_7_9, 'id': 'S1_7_9', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please describe basis of preparation of non-employees estimated number.**', 'value': S1_7_10, 'id': 'S1_7_10', 'answer_type': 'OPEN_LARGE'})
 
   card_title = 's1-7'
   card_description = ''
@@ -101,8 +96,8 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_7_1', 'S1_7_2', 'S1_7_3', 'S1_7_6', 'S1_7_7', 'S1_7_8', 'S1_7_9', 'S1_7_10']])]})
-  survey_analytics.append({"id": "S1_7_F1", "name": "Number of non-employees in the workforce", "values": ["S1_7_1", "S1_7_2", "S1_7_3"], "labels": ["Overall", "Self-employed", "Employment activities"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_7_1", "S1_7_2", "S1_7_3", "S1_7_6", "S1_7_7", "S1_7_8", "S1_7_9", "S1_7_10"], "dtypes": []})
+  survey_analytics.append({"id": "S1_7_F1", "name": "Number of non-employees in the workforce", "values": ["S1_7_1", "S1_7_2", "S1_7_3"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -134,16 +129,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -167,7 +157,7 @@ code: |
 --- 
 progress: 0
 question: |
-  Please disclose the number of non-employees in the undertaking’s own workforce. 
+  Please disclose the number of non-employees in the undertaking’s own workforce. ** 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -181,7 +171,7 @@ fields:
 --- 
 progress: 10
 question: |
-  Please disclose the number of non-employees in the undertaking’s own workforce - self employed people. 
+  Please disclose the number of non-employees in the undertaking’s own workforce - self employed people. ** 
 back button: True
 fields:
   - no label: S1_7_2
@@ -190,7 +180,7 @@ fields:
 --- 
 progress: 20
 question: |
-  Please disclose the number of non-employees in the undertaking’s own workforce - people provided by undertakings primarily engaged in employment activities. 
+  Please disclose the number of non-employees in the undertaking’s own workforce - people provided by undertakings primarily engaged in employment activities. ** 
 back button: True
 fields:
   - no label: S1_7_3
@@ -222,7 +212,7 @@ fields:
 --- 
 progress: 50
 question: |
-  Please describe the methodologies and assumptions used to compile data (non-employees). 
+  Please describe the methodologies and assumptions used to compile data (non-employees).** 
 back button: True
 fields:
   - no label: S1_7_6
@@ -231,7 +221,7 @@ fields:
 --- 
 progress: 60
 question: |
-  Please disclose if non-employees numbers are reported in head count or full time equivalent. 
+  Please disclose if non-employees numbers are reported in head count or full time equivalent.** 
 back button: True
 fields:
   - no label: S1_7_7
@@ -243,7 +233,7 @@ fields:
 --- 
 progress: 70
 question: |
-  Please disclose when non-employees numbers are reported. 
+  Please disclose when non-employees numbers are reported. ** 
 back button: True
 fields:
   - no label: S1_7_8
@@ -256,7 +246,7 @@ fields:
 --- 
 progress: 80
 question: |
-  Please provide contextual information necessary to understand the data (non-employee workers). 
+  Please provide contextual information necessary to understand the data (non-employee workers).** 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -272,7 +262,7 @@ fields:
 --- 
 progress: 90
 question: |
-  Please describe basis of preparation of non-employees estimated number. 
+  Please describe basis of preparation of non-employees estimated number.** 
 help:
   label: Help?
   heading: <BR><h6>Explanation</h6>
@@ -283,6 +273,15 @@ fields:
   - no label: S1_7_10
     datatype: area
     required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

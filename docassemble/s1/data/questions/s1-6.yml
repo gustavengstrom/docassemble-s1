@@ -1,12 +1,12 @@
 metadata:
   title: |
-    s1-6
+    S1-6
   short title: |
-    The undertaking shall describe key characteristics of employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank.
+    Social 1-6 Own Workforce&#58; Characteristics of the undertaking’s employees
   show login: False
   description: |
-    DESCRIPTION 
-  revision_date: 2024-09-12
+    The undertaking shall describe key characteristics of employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank. 
+  revision_date: 2024-11-25
 ---
 modules:
   - .post
@@ -25,7 +25,7 @@ features:
 ---
 field: intro_screen
 question: |
-  Social 1-6 Own Workforce: Characteristics of the undertaking’s employees
+  Social 1-6 Own Workforce&#58; Characteristics of the undertaking’s employees
 subquestion: |
   The undertaking shall describe key characteristics of employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank.
 
@@ -43,30 +43,25 @@ code: |
   redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
-  token = url_args.get("token")
-
   intro_screen
-  validate_status, validate_content = validate_session({"token": token, "board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
-    guest_member = session_info.get("boardmember_id")
+    guest_member = session_info.get("guest_member")
+    external = session_info.get("external")
     if guest_member:
       redirect_url = "https://www.beyondcsrd.se"
-
-  # Get more query params
-  organisation_id = url_args.get("organisation", "")
-  target_date = url_args.get("target_date")
-  external_organisation = url_args.get("external_organisation")
-  wekan_board = url_args.get("wekan_board")   # If wekan_board is set to None the list and swimlane info will be retrieved in the django backend
-  list_id = url_args.get("list_id", "optional_default_list_id")
-  swimlane_id = url_args.get("swimlane_id", "optional_default_swimlane_id")
 
   # This is needed so we can filter active interviews on board_id
   session_tags().add(board_id)
   session_tags().add(board_id+"__"+survey_id)
-  session_tags().add(board_id+"__"+survey_id+"__"+organisation_id)
+
+  if external:
+    external_organisation_name
+  else:
+    external_organisation_name = None
 
   survey_data = []
   survey_data.append({'name': 'Please disclose the number of employees (head count).', 'value': S1_6_1, 'id': 'S1_6_1', 'answer_type': 'NUMERIC'})
@@ -125,16 +120,16 @@ code: |
   survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_24, 'id': 'S1_6_24', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
   if not defined('S1_6_25'):
     define('S1_6_25', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_25, 'id': 'S1_6_25', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_25, 'id': 'S1_6_25', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
   if not defined('S1_6_26'):
     define('S1_6_26', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of male non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_26, 'id': 'S1_6_26', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_26, 'id': 'S1_6_26', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
   if not defined('S1_6_27'):
     define('S1_6_27', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of other gender non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_27, 'id': 'S1_6_27', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_27, 'id': 'S1_6_27', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
   if not defined('S1_6_28'):
     define('S1_6_28', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_28, 'id': 'S1_6_28', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_28, 'id': 'S1_6_28', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
   if not defined('S1_6_29'):
     define('S1_6_29', '_n/a_')
   survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_29, 'id': 'S1_6_29', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
@@ -198,10 +193,10 @@ code: |
   survey_data.append({'name': 'Please disclose the number of male temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_67, 'id': 'S1_6_67', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose the number of other gender temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_68, 'id': 'S1_6_68', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_69, 'id': 'S1_6_69', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female non-guranteed hours employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_70, 'id': 'S1_6_70', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male non-guranteed hours employees by head count or full time equivalent (FTE)in region A.*', 'value': S1_6_71, 'id': 'S1_6_71', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of other gender non-guranteed hours employees by head count or full time equivalent (FTE).*', 'value': S1_6_72, 'id': 'S1_6_72', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total non-guranteed hours employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_73, 'id': 'S1_6_73', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_70, 'id': 'S1_6_70', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE)in region A.*', 'value': S1_6_71, 'id': 'S1_6_71', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE).*', 'value': S1_6_72, 'id': 'S1_6_72', 'answer_type': 'NUMERIC'})
+  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_73, 'id': 'S1_6_73', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_74, 'id': 'S1_6_74', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose the number of total full-time female employees by head count or full time equivalent (FTE).*', 'value': S1_6_75, 'id': 'S1_6_75', 'answer_type': 'NUMERIC'})
   survey_data.append({'name': 'Please disclose the number of total male full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_76, 'id': 'S1_6_76', 'answer_type': 'NUMERIC'})
@@ -242,18 +237,18 @@ code: |
 
   survey_data_ids = [d['id'] for d in survey_data]
   survey_analytics = []
-  survey_analytics.append({"id": "sc_id","name": "score_coverage", "values": [dyn_id for dyn_id in survey_data_ids if any([sa_id in dyn_id for sa_id in ['S1_6_1', 'S1_6_2', 'S1_6_3', 'S1_6_4', 'S1_6_5', 'S1_6_6', 'S1_6_7', 'S1_6_8', 'S1_6_9', 'S1_6_10', 'S1_6_11', 'S1_6_12', 'S1_6_13', 'S1_6_14', 'S1_6_40', 'S1_6_41', 'S1_6_42', 'S1_6_43', 'S1_6_44', 'S1_6_45', 'S1_6_46', 'S1_6_47', 'S1_6_48', 'S1_6_49', 'S1_6_50', 'S1_6_51', 'S1_6_52', 'S1_6_53', 'S1_6_54', 'S1_6_55', 'S1_6_56', 'S1_6_57', 'S1_6_85', 'S1_6_86', 'S1_6_87', 'S1_6_88', 'S1_6_89', 'S1_6_90', 'S1_6_91']])]})
-  survey_analytics.append({"id": "S1_6_F1", "name": "Characteristics of employees", "values": ["S1_6_1", "S1_6_2", "S1_6_3", "S1_6_4", "S1_6_5", "S1_6_6", "S1_6_7", "S1_6_8"], "labels": ["Total", "Female", "Male", "Other", "Total (average)", "Female (average)", "Male (average)", "Other (average)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F2", "name": "Characteristics of undertaking's employees in countries with 50 or more employees", "values": ["S1_6_10", "S1_6_11", "S1_6_12", "S1_6_13", "S1_6_14"], "labels": ["Total", "Female", "Male", "Other", "Total (average)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F3", "name": "Number of employees by employment type, gender and region", "values": ["S1_6_15", "S1_6_16", "S1_6_17", "S1_6_18", "S1_6_19", "S1_6_20", "S1_6_21", "S1_6_22", "S1_6_23", "S1_6_24", "S1_6_25", "S1_6_26", "S1_6_27", "S1_6_28"], "labels": ["Female (region A)", "Other (region B)", "Female permanent (region B)", "Male permanent (region B)", "Other permanent (region B)", "Total permanent (region B)", "Female temporary (region B)", "Male temporary (region B)", "Other temporary (region B)", "Total temporary (region B)", "Female non-guarenteed (region B)", "Male non-guarenteed (region B)", "Other non-guarenteed(region B)", "Total  non-guarenteed (region B)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F4", "name": "Number of full-time employees (head count/FTE)", "values": ["S1_6_29", "S1_6_30", "S1_6_31", "S1_6_32", "S1_6_33"], "labels": ["Total (region B)", "Female (region B)", "Male (regionl B)", "Other gender (region AB)", "Total full-time (region B)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F5", "name": "Number of part-time employees (head count/FTE)", "values": ["S1_6_34", "S1_6_35", "S1_6_36", "S1_6_37"], "labels": ["Female (region B)", "Male (region B)", "Other (region B)", "Not disclosed (region B)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F6", "name": "Characteristics of undertaking's employees in countries with 50 or more employees", "values": ["S1_6_40", "S1_6_41", "S1_6_42"], "labels": ["Female (average)", "Male (average)", "Other (average)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F7", "name": "Contract type and gender", "values": ["S1_6_43", "S1_6_44", "S1_6_45", "S1_6_46", "S1_6_47", "S1_6_48", "S1_6_49", "S1_6_50", "S1_6_51", "S1_6_52", "S1_6_53", "S1_6_54", "S1_6_55", "S1_6_56", "S1_6_57"], "labels": ["Total number of permanent employees", "Average number of permanent employees", "Permanent women employees", "Permanent men employees", "Permanent other gender employees", "Total number of temporary employees", "Average number of temporary employees", "Temporary female employees", "Temporary male employees", "Temporary employees other gender", "Total number of non-guaranteed hours employees", "Average number of non-guaranteed hours employees", "Non-guaranteed hours female employees", "Non-guaranteed hours male employees", "Non-guaranteed hours employees other gender"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F8", "name": "Number of employees by employment type, gender and region", "values": ["S1_6_58", "S1_6_59", "S1_6_60", "S1_6_61", "S1_6_62", "S1_6_63", "S1_6_64", "S1_6_65", "S1_6_66", "S1_6_67", "S1_6_68", "S1_6_69", "S1_6_70", "S1_6_71", "S1_6_72", "S1_6_73"], "labels": ["Male (region A)", "Male (region B)", "Female (region B)", "Other (region A)", "Female permanent (region A)", "Male permanent (region A)", "Other permanent (region A)", "Total permanent (region A)", "Female temporary (region A)", "Male temporary (region A)", "Other temporary (region A)", "Total temporary (region A)", "Female non-guarenteed (region A)", "Male non-guarenteed (region A)", "Other non-guarenteed (region A)", "Total non-guarenteed (region A)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F9", "name": "Number of full-time employees (head count/FTE)", "values": ["S1_6_74", "S1_6_75", "S1_6_76", "S1_6_77", "S1_6_78"], "labels": ["Total (region A)", "Female (region A)", "Male (region A)", "Other gender (region A)", "Total full-time (region A)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F10", "name": "Number of part-time employees (head count/FTE)", "values": ["S1_6_79", "S1_6_80", "S1_6_81", "S1_6_82"], "labels": ["Female (region A)", "Male (region A)", "Other (region A)", "Not disclosed (region A)"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
-  survey_analytics.append({"id": "S1_6_F11", "name": "Employee turnover in the reporting period", "values": ["S1_6_86"], "labels": ["Employee turnover"], "dtypes": ["PERCENT"]})
+  survey_analytics.append({"id": "S1_compliance_F1", "name": "S1 compliance ratio", "values": ["S1_6_1", "S1_6_2", "S1_6_3", "S1_6_4", "S1_6_5", "S1_6_6", "S1_6_7", "S1_6_8", "S1_6_9", "S1_6_10", "S1_6_11", "S1_6_12", "S1_6_13", "S1_6_14", "S1_6_40", "S1_6_41", "S1_6_42", "S1_6_43", "S1_6_44", "S1_6_45", "S1_6_46", "S1_6_47", "S1_6_48", "S1_6_49", "S1_6_50", "S1_6_51", "S1_6_52", "S1_6_53", "S1_6_54", "S1_6_55", "S1_6_56", "S1_6_57", "S1_6_85", "S1_6_86", "S1_6_87", "S1_6_88", "S1_6_89", "S1_6_90", "S1_6_91"], "dtypes": []})
+  survey_analytics.append({"id": "S1_6_F1", "name": "Characteristics of employees", "values": ["S1_6_1", "S1_6_2", "S1_6_3", "S1_6_4", "S1_6_5", "S1_6_6", "S1_6_7", "S1_6_8"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F2", "name": "Characteristics of undertaking's employees in countries with 50 or more employees", "values": ["S1_6_10", "S1_6_11", "S1_6_12", "S1_6_13", "S1_6_14"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F3", "name": "Number of employees by employment type, gender and region", "values": ["S1_6_15", "S1_6_16", "S1_6_17", "S1_6_18", "S1_6_19", "S1_6_20", "S1_6_21", "S1_6_22", "S1_6_23", "S1_6_24", "S1_6_25", "S1_6_26", "S1_6_27", "S1_6_28"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F4", "name": "Number of full-time employees (head count/FTE)", "values": ["S1_6_29", "S1_6_30", "S1_6_31", "S1_6_32", "S1_6_33"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F5", "name": "Number of part-time employees (head count/FTE)", "values": ["S1_6_34", "S1_6_35", "S1_6_36", "S1_6_37"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F6", "name": "Characteristics of undertaking's employees in countries with 50 or more employees", "values": ["S1_6_40", "S1_6_41", "S1_6_42"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F7", "name": "Contract type and gender", "values": ["S1_6_43", "S1_6_44", "S1_6_45", "S1_6_46", "S1_6_47", "S1_6_48", "S1_6_49", "S1_6_50", "S1_6_51", "S1_6_52", "S1_6_53", "S1_6_54", "S1_6_55", "S1_6_56", "S1_6_57"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F8", "name": "Number of employees by employment type, gender and region", "values": ["S1_6_58", "S1_6_59", "S1_6_60", "S1_6_61", "S1_6_62", "S1_6_63", "S1_6_64", "S1_6_65", "S1_6_66", "S1_6_67", "S1_6_68", "S1_6_69", "S1_6_70", "S1_6_71", "S1_6_72", "S1_6_73"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F9", "name": "Number of full-time employees (head count/FTE)", "values": ["S1_6_74", "S1_6_75", "S1_6_76", "S1_6_77", "S1_6_78"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F10", "name": "Number of part-time employees (head count/FTE)", "values": ["S1_6_79", "S1_6_80", "S1_6_81", "S1_6_82"], "dtypes": ["NUMERIC", "NUMERIC", "NUMERIC", "NUMERIC"]})
+  survey_analytics.append({"id": "S1_6_F11", "name": "Employee turnover in the reporting period", "values": ["S1_6_86"], "dtypes": ["PERCENT"]})
 
   survey_analytics_dq = []
   for sa_idx, sa in enumerate(survey_analytics):
@@ -285,16 +280,11 @@ code: |
   data = {
       "board_id": board_id,
       "survey_id": survey_id,
-      "organisation_id": organisation_id,
-      "external_organisation": external_organisation,
+      "external_organisation": external_organisation_name,
       "survey_data": survey_data,
       "survey_analytics": survey_analytics_dq,
       "survey_uploads": [],
-      "max_responses": {"count": "9", "date_period": "year", "column_title": "Fiscal year"},
-      "target_date": target_date,
-      "wekan_board": wekan_board,
-      "list_id": list_id,
-      "swimlane_id": swimlane_id,
+      "max_responses": {"count": "1", "date_period": "year", "column_title": "Fiscal year"},
       "wekan_data": {
           "card_title": card_title,
           "card_description": card_description
@@ -489,22 +479,22 @@ fields:
     datatype: number
     js show if: |
       ['Yes'].includes(val('S1_6_9'))
-  - "Please disclose the number of female non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*": S1_6_25
+  - "Please disclose the number of female non-guaranteed hours employees by head count or full time equivalent (FTE) in region B.*": S1_6_25
     required: false
     datatype: number
     js show if: |
       ['Yes'].includes(val('S1_6_9'))
-  - "Please disclose the number of male non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*": S1_6_26
+  - "Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*": S1_6_26
     required: false
     datatype: number
     js show if: |
       ['Yes'].includes(val('S1_6_9'))
-  - "Please disclose the number of other gender non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*": S1_6_27
+  - "Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*": S1_6_27
     required: false
     datatype: number
     js show if: |
       ['Yes'].includes(val('S1_6_9'))
-  - "Please disclose the number of total non-guranteed hours employees by head count or full time equivalent (FTE) in region B.*": S1_6_28
+  - "Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*": S1_6_28
     required: false
     datatype: number
     js show if: |
@@ -853,7 +843,7 @@ fields:
 --- 
 progress: 64
 question: |
-  Please disclose the number of female non-guranteed hours employees by head count or full time equivalent (FTE) in region A.* 
+  Please disclose the number of female non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.* 
 back button: True
 fields:
   - no label: S1_6_70
@@ -862,7 +852,7 @@ fields:
 --- 
 progress: 66
 question: |
-  Please disclose the number of male non-guranteed hours employees by head count or full time equivalent (FTE)in region A.* 
+  Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE)in region A.* 
 back button: True
 fields:
   - no label: S1_6_71
@@ -871,7 +861,7 @@ fields:
 --- 
 progress: 68
 question: |
-  Please disclose the number of other gender non-guranteed hours employees by head count or full time equivalent (FTE).* 
+  Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE).* 
 back button: True
 fields:
   - no label: S1_6_72
@@ -880,7 +870,7 @@ fields:
 --- 
 progress: 69
 question: |
-  Please disclose the number of total non-guranteed hours employees by head count or full time equivalent (FTE) in region A.* 
+  Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.* 
 back button: True
 fields:
   - no label: S1_6_73
@@ -1080,6 +1070,15 @@ fields:
   - no label: S1_6_91
     datatype: area
     required: false
+---
+progress: 0
+back button: True
+question: |
+  Please enter the name of the organisation you represent.
+fields:
+  - Organisation name: external_organisation_name
+    required: false
+
 ---
 #! Response report before submission
 progress: 100

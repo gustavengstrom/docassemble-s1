@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall describe its policies adopted to manage its material impacts on its own workforce, as well as associated material risks and opportunities. All questions marked with * are voluntary. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,46 +31,69 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["ESRS_S1_1_1", "ESRS_S1_1_2", "ESRS_S1_1_3", "ESRS_S1_1_5", "ESRS_S1_1_6", "ESRS_S1_1_7", "ESRS_S1_1_8", "ESRS_S1_1_9", "ESRS_S1_1_10", "ESRS_S1_1_11", "ESRS_S1_1_12", "ESRS_S1_1_13", "ESRS_S1_1_14", "ESRS_S1_1_15", "ESRS_S1_1_16", "ESRS_S1_1_17", "ESRS_S1_1_18", "ESRS_S1_1_19", "ESRS_S1_1_20", "ESRS_S1_1_21", "ESRS_S1_1_22", "ESRS_S1_1_23", "ESRS_S1_1_24", "ESRS_S1_1_25", "ESRS_S1_1_26", "ESRS_S1_1_27", "ESRS_S1_1_28", "ESRS_S1_1_29", "ESRS_S1_1_30", "ESRS_S1_1_31", "ESRS_S1_1_32", "ESRS_S1_1_33", "ESRS_S1_1_34", "ESRS_S1_1_35", "ESRS_S1_1_36", "ESRS_S1_1_37", "ESRS_S1_1_38", "ESRS_S1_1_39", "ESRS_S1_1_40", "ESRS_S1_1_41"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'Does the undertaking have policies to manage its material impacts, risks and opportunities related to its own workforce in accordance with ESRS 2 MDR-P Policies adopted to manage material sustainability matters?', 'value': ESRS_S1_1_1 if ESRS_S1_1_1!='None' else '', 'id': 'ESRS_S1_1_1', 'answer_type': 'Yes/No/Partly', 'dynamic_header':'Please elaborate on the questions below for each policy.', 'dynamic_condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Does the undertaking have policies to manage its material impacts, risks and opportunities related to its own workforce in accordance with ESRS 2 MDR-P Policies adopted to manage material sustainability matters?', 'value': ESRS_S1_1_1 if ESRS_S1_1_1!='None' else '', 'id': 'ESRS_S1_1_1', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_1' in include_question_ids})
   if not defined('ESRS_S1_1_2'):
     define('ESRS_S1_1_2', '_n/a_')
-  survey_data.append({'name': 'Please disclose the reasons for not having adopted policies relating to own workforce.*', 'value': ESRS_S1_1_2, 'id': 'ESRS_S1_1_2', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_1', 'condition_criteria': 'No'})
+  survey_data.append({'name': 'Please disclose the reasons for not having adopted policies relating to own workforce.*', 'value': ESRS_S1_1_2, 'id': 'ESRS_S1_1_2', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_1', 'condition_criteria': 'No', 'included': 'ESRS_S1_1_2' in include_question_ids})
   if not defined('ESRS_S1_1_3'):
     define('ESRS_S1_1_3', '_n/a_')
-  survey_data.append({'name': 'Please disclose the timeframe in which the undertakings aims to adopt policies relating to own workforce.*', 'value': ESRS_S1_1_3, 'id': 'ESRS_S1_1_3', 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1', 'condition_criteria': 'No'})
+  survey_data.append({'name': 'Please disclose the timeframe in which the undertakings aims to adopt policies relating to own workforce.*', 'value': ESRS_S1_1_3, 'id': 'ESRS_S1_1_3', 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1', 'condition_criteria': 'No', 'included': 'ESRS_S1_1_3' in include_question_ids})
   if ESRS_S1_1_1 in ['Yes', 'Partly']:
     ESRS_S1_1_4.gather()
   else:
@@ -81,69 +104,69 @@ code: |
   for index, indicator in enumerate(ESRS_S1_1_4):
     if not indicator.attribute_defined('ESRS_S1_1_5'):
       indicator.ESRS_S1_1_5 = '_n/a_'
-    survey_data.append({'name': 'Please describe the key contents of the policy relating to the undertaking&#x27;s own workforce. The undertaking shall specify if such policies cover specific groups within its own workforce or all of its own workforce.', 'value': indicator.ESRS_S1_1_5, 'id': f'ESRS_S1_1_5__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please describe the key contents of the policy relating to the undertaking&#x27;s own workforce. The undertaking shall specify if such policies cover specific groups within its own workforce or all of its own workforce.', 'value': indicator.ESRS_S1_1_5, 'id': f'ESRS_S1_1_5__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'ESRS_S1_1_5' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
     if not indicator.attribute_defined('ESRS_S1_1_6'):
       indicator.ESRS_S1_1_6 = '_n/a_'
-    survey_data.append({'name': 'Please describe the scope of policy relating to own workforce or of its exclusions in terms of activities, upstream or downstream value chain, geographies and stakeholder groups if relevant.', 'value': indicator.ESRS_S1_1_6, 'id': f'ESRS_S1_1_6__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please describe the scope of policy relating to own workforce or of its exclusions in terms of activities, upstream or downstream value chain, geographies and stakeholder groups if relevant.', 'value': indicator.ESRS_S1_1_6, 'id': f'ESRS_S1_1_6__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'ESRS_S1_1_6' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
     if not indicator.attribute_defined('ESRS_S1_1_7'):
       indicator.ESRS_S1_1_7 = '_n/a_'
-    survey_data.append({'name': 'Please describe the most senior level in organisation that is accountable for implementation of policy relating to own workforce.', 'value': indicator.ESRS_S1_1_7, 'id': f'ESRS_S1_1_7__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please describe the most senior level in organisation that is accountable for implementation of policy relating to own workforce.', 'value': indicator.ESRS_S1_1_7, 'id': f'ESRS_S1_1_7__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'ESRS_S1_1_7' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
     if not indicator.attribute_defined('ESRS_S1_1_8'):
       indicator.ESRS_S1_1_8 = '_n/a_'
-    survey_data.append({'name': 'Please describe the third-party standards or initiatives that are respected through implementation of policy relating to own workforce.', 'value': indicator.ESRS_S1_1_8, 'id': f'ESRS_S1_1_8__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please describe the third-party standards or initiatives that are respected through implementation of policy relating to own workforce.', 'value': indicator.ESRS_S1_1_8, 'id': f'ESRS_S1_1_8__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'ESRS_S1_1_8' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
     if not indicator.attribute_defined('ESRS_S1_1_9'):
       indicator.ESRS_S1_1_9 = '_n/a_'
-    survey_data.append({'name': 'Please describe the consideration given to interests of key stakeholders in setting policy relating to own workforce.', 'value': indicator.ESRS_S1_1_9, 'id': f'ESRS_S1_1_9__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please describe the consideration given to interests of key stakeholders in setting policy relating to own workforce.', 'value': indicator.ESRS_S1_1_9, 'id': f'ESRS_S1_1_9__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_9' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
     if not indicator.attribute_defined('ESRS_S1_1_10'):
       indicator.ESRS_S1_1_10 = '_n/a_'
-    survey_data.append({'name': 'Please explain how the policy is made available to potentially affected stakeholders and stakeholders who need to help implement it relating to own workforce.', 'value': indicator.ESRS_S1_1_10, 'id': f'ESRS_S1_1_10__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_1'})
+    survey_data.append({'name': 'Please explain how the policy is made available to potentially affected stakeholders and stakeholders who need to help implement it relating to own workforce.', 'value': indicator.ESRS_S1_1_10, 'id': f'ESRS_S1_1_10__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_10' in include_question_ids, 'dynamic_group_id': 'ESRS_S1_1_4', 'dynamic_condition': 'ESRS_S1_1_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each policy.'})
   if ESRS_S1_1_1 not in ['Yes', 'Partly']:
     ESRS_S1_1_4.clear()
-  survey_data.append({'name': 'Please disclose if any significant changes to policies have been adopted during the reporting year.*', 'value': ESRS_S1_1_11 if ESRS_S1_1_11!='None' else '', 'id': 'ESRS_S1_1_11', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose if any significant changes to policies have been adopted during the reporting year.*', 'value': ESRS_S1_1_11 if ESRS_S1_1_11!='None' else '', 'id': 'ESRS_S1_1_11', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_11' in include_question_ids})
   if not defined('ESRS_S1_1_12'):
     define('ESRS_S1_1_12', '_n/a_')
-  survey_data.append({'name': 'Please disclose the changes that have been adopted during the reporting year.', 'value': ESRS_S1_1_12, 'id': 'ESRS_S1_1_12', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_11', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking have human rights policy commitments that are relevant to its own workforce?', 'value': ESRS_S1_1_13 if ESRS_S1_1_13!='None' else '', 'id': 'ESRS_S1_1_13', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose the changes that have been adopted during the reporting year.', 'value': ESRS_S1_1_12, 'id': 'ESRS_S1_1_12', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_11', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_12' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have human rights policy commitments that are relevant to its own workforce?', 'value': ESRS_S1_1_13 if ESRS_S1_1_13!='None' else '', 'id': 'ESRS_S1_1_13', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_13' in include_question_ids})
   if not defined('ESRS_S1_1_14'):
     define('ESRS_S1_1_14', '_n/a_')
-  survey_data.append({'name': 'Please describe the human rights policy commitments related to own workforce.', 'value': ESRS_S1_1_14, 'id': 'ESRS_S1_1_14', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_13', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Please disclose the general approach in relation to respect for human rights including labour rights, of people in its own workforce.', 'value': ESRS_S1_1_15, 'id': 'ESRS_S1_1_15', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose the general approach in relation to engagement with people in its own workforce.', 'value': ESRS_S1_1_16, 'id': 'ESRS_S1_1_16', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose the general approach in relation to measures to provide and (or) enable remedy for human rights impacts .', 'value': ESRS_S1_1_17, 'id': 'ESRS_S1_1_17', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Are policies aligned with relevant internationally recognised instruments?', 'value': ESRS_S1_1_18 if ESRS_S1_1_18!='None' else '', 'id': 'ESRS_S1_1_18', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please describe the human rights policy commitments related to own workforce.', 'value': ESRS_S1_1_14, 'id': 'ESRS_S1_1_14', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_13', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_14' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the general approach in relation to respect for human rights including labour rights, of people in its own workforce.', 'value': ESRS_S1_1_15, 'id': 'ESRS_S1_1_15', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_15' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the general approach in relation to engagement with people in its own workforce.', 'value': ESRS_S1_1_16, 'id': 'ESRS_S1_1_16', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_16' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the general approach in relation to measures to provide and (or) enable remedy for human rights impacts .', 'value': ESRS_S1_1_17, 'id': 'ESRS_S1_1_17', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_17' in include_question_ids})
+  survey_data.append({'name': 'Are policies aligned with relevant internationally recognised instruments?', 'value': ESRS_S1_1_18 if ESRS_S1_1_18!='None' else '', 'id': 'ESRS_S1_1_18', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_18' in include_question_ids})
   if not defined('ESRS_S1_1_19'):
     define('ESRS_S1_1_19', '_n/a_')
-  survey_data.append({'name': 'Please disclose how policies align with relevant internationally recognised instruments.', 'value': ESRS_S1_1_19, 'id': 'ESRS_S1_1_19', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_18', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Do policies explicitly address trafficking in human beings, forced labour or compulsory labour and child labour?', 'value': ESRS_S1_1_20 if ESRS_S1_1_20!='None' else '', 'id': 'ESRS_S1_1_20', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose how policies align with relevant internationally recognised instruments.', 'value': ESRS_S1_1_19, 'id': 'ESRS_S1_1_19', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_18', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_19' in include_question_ids})
+  survey_data.append({'name': 'Do policies explicitly address trafficking in human beings, forced labour or compulsory labour and child labour?', 'value': ESRS_S1_1_20 if ESRS_S1_1_20!='None' else '', 'id': 'ESRS_S1_1_20', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_20' in include_question_ids})
   if not defined('ESRS_S1_1_21'):
     define('ESRS_S1_1_21', '_n/a_')
-  survey_data.append({'name': 'Please disclose how policies explicitly address trafficking in human beings, forced labour or compulsory labour and child labour.', 'value': ESRS_S1_1_21, 'id': 'ESRS_S1_1_21', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_20', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking have a workplace accident prevention policy or management system?', 'value': ESRS_S1_1_22 if ESRS_S1_1_22!='None' else '', 'id': 'ESRS_S1_1_22', 'answer_type': 'Yes/No/Partly'})
-  survey_data.append({'name': 'Does the undertaking have specific policies aimed at the elimination of discrimination, including harassment, promoting equal opportunities and other ways to advance diversity and inclusion?', 'value': ESRS_S1_1_23 if ESRS_S1_1_23!='None' else '', 'id': 'ESRS_S1_1_23', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose how policies explicitly address trafficking in human beings, forced labour or compulsory labour and child labour.', 'value': ESRS_S1_1_21, 'id': 'ESRS_S1_1_21', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_20', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_21' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have a workplace accident prevention policy or management system?', 'value': ESRS_S1_1_22 if ESRS_S1_1_22!='None' else '', 'id': 'ESRS_S1_1_22', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_22' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have specific policies aimed at the elimination of discrimination, including harassment, promoting equal opportunities and other ways to advance diversity and inclusion?', 'value': ESRS_S1_1_23 if ESRS_S1_1_23!='None' else '', 'id': 'ESRS_S1_1_23', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_23' in include_question_ids})
   if not defined('ESRS_S1_1_24'):
     define('ESRS_S1_1_24', '_n/a_')
-  survey_data.append({'name': 'Please describe the policy and/or management system aimed at the elimination of discrimination, including harassment, promoting equal opportunities and other ways to advance diversity and inclusion.', 'value': ESRS_S1_1_24, 'id': 'ESRS_S1_1_24', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_23', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Are there specific policies aimed at elimination of discrimination?', 'value': ESRS_S1_1_25 if ESRS_S1_1_25!='None' else '', 'id': 'ESRS_S1_1_25', 'answer_type': 'Yes/No/Partly'})
-  survey_data.append({'name': 'Please disclose the policies aimed at elimination of discrimination.', 'value': ESRS_S1_1_26, 'id': 'ESRS_S1_1_26', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Are the following grounds for discrimination specifically covered in the policy&#58; racial and ethnic origin, colour, sex, sexual orientation, gender identity, disability, age, religion, political opinion, national extraction or social origin, or other forms of discrimination covered by Union regulation and national law?', 'value': ESRS_S1_1_27 if ESRS_S1_1_27!='None' else '', 'id': 'ESRS_S1_1_27', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please describe the policy and/or management system aimed at the elimination of discrimination, including harassment, promoting equal opportunities and other ways to advance diversity and inclusion.', 'value': ESRS_S1_1_24, 'id': 'ESRS_S1_1_24', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_23', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_24' in include_question_ids})
+  survey_data.append({'name': 'Are there specific policies aimed at elimination of discrimination?', 'value': ESRS_S1_1_25 if ESRS_S1_1_25!='None' else '', 'id': 'ESRS_S1_1_25', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_25' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the policies aimed at elimination of discrimination.', 'value': ESRS_S1_1_26, 'id': 'ESRS_S1_1_26', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_26' in include_question_ids})
+  survey_data.append({'name': 'Are the following grounds for discrimination specifically covered in the policy&#58; racial and ethnic origin, colour, sex, sexual orientation, gender identity, disability, age, religion, political opinion, national extraction or social origin, or other forms of discrimination covered by Union regulation and national law?', 'value': ESRS_S1_1_27 if ESRS_S1_1_27!='None' else '', 'id': 'ESRS_S1_1_27', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_27' in include_question_ids})
   if not defined('ESRS_S1_1_28'):
     define('ESRS_S1_1_28', '_n/a_')
-  survey_data.append({'name': 'Please share what grounds that are covered (i.e., amongst racial and ethnic origin, colour, sex, sexual orientation, gender identity, disability, age, religion, political opinion, national extraction or social origin, or other forms of discrimination).', 'value': ESRS_S1_1_28, 'id': 'ESRS_S1_1_28', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_27', 'condition_criteria': 'Partly'})
-  survey_data.append({'name': 'Does the undertaking have specific policy commitments related to inclusion or positive action for people from groups at particular risk of vulnerability in its own workforce?', 'value': ESRS_S1_1_29 if ESRS_S1_1_29!='None' else '', 'id': 'ESRS_S1_1_29', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please share what grounds that are covered (i.e., amongst racial and ethnic origin, colour, sex, sexual orientation, gender identity, disability, age, religion, political opinion, national extraction or social origin, or other forms of discrimination).', 'value': ESRS_S1_1_28, 'id': 'ESRS_S1_1_28', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_27', 'condition_criteria': 'Partly', 'included': 'ESRS_S1_1_28' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have specific policy commitments related to inclusion or positive action for people from groups at particular risk of vulnerability in its own workforce?', 'value': ESRS_S1_1_29 if ESRS_S1_1_29!='None' else '', 'id': 'ESRS_S1_1_29', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_29' in include_question_ids})
   if not defined('ESRS_S1_1_30'):
     define('ESRS_S1_1_30', '_n/a_')
-  survey_data.append({'name': 'Please disclose the commitments related to inclusion or positive action for people from groups at particular risk of vulnerability in its own workforce.', 'value': ESRS_S1_1_30, 'id': 'ESRS_S1_1_30', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_29', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Are these policies implemented through specific procedures to ensure discrimination is prevented, mitigated and acted upon once detected, as well as to advance diversity and inclusion in general?', 'value': ESRS_S1_1_31 if ESRS_S1_1_31!='None' else '', 'id': 'ESRS_S1_1_31', 'answer_type': 'Yes/No/Partly'})
-  survey_data.append({'name': 'Please share how policies are implemented through specific procedures to ensure discrimination is prevented, mitigated and acted upon once detected, as well as to advance diversity and inclusion in general.', 'value': ESRS_S1_1_32, 'id': 'ESRS_S1_1_32', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please provide an illustration of the types of communication of policies to those individuals, group of individuals or entities for whom they are relevant.*', 'value': ESRS_S1_1_33, 'id': 'ESRS_S1_1_33', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking has policies and procedures which make qualifications, skills and experience the basis for the recruitment, placement, training and advancement at all levels.*', 'value': ESRS_S1_1_34, 'id': 'ESRS_S1_1_34', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking assigns responsibility at top management level for equal treatment and opportunities in employment, issue clear company-wide policies and procedures to guide equal employment practices, and link advancement to desired performance in this area.*', 'value': ESRS_S1_1_35, 'id': 'ESRS_S1_1_35', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking provides or is planning to provide staff training on non-discrimination policies and practices.*', 'value': ESRS_S1_1_36, 'id': 'ESRS_S1_1_36', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking makes adjustments to the physical environment to ensure health and safety for workers, customers and other visitors with disabilities.*', 'value': ESRS_S1_1_37, 'id': 'ESRS_S1_1_37', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking evaluates or plans to evaluate whether job requirements have been defined in a way that could systematically disadvantage certain groups.*', 'value': ESRS_S1_1_38, 'id': 'ESRS_S1_1_38', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking keeps or is planning to keep up-to-date records on recruitment, training and promotion that provide a transparent view of opportunities for employees and their progression within the undertaking.*', 'value': ESRS_S1_1_39, 'id': 'ESRS_S1_1_39', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking puts or is planning to put in place grievance procedures to address complaints, handle appeals and provide recourse for employees (especially in the context of negotiations and collective agreements) when discrimination is identified, and is alert to formal structures and informal cultural issues that can prevent employees from raising concerns and grievances.*', 'value': ESRS_S1_1_40, 'id': 'ESRS_S1_1_40', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether the undertaking has or is planning to have programs to promote access to skills development.*', 'value': ESRS_S1_1_41, 'id': 'ESRS_S1_1_41', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the commitments related to inclusion or positive action for people from groups at particular risk of vulnerability in its own workforce.', 'value': ESRS_S1_1_30, 'id': 'ESRS_S1_1_30', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_S1_1_29', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_S1_1_30' in include_question_ids})
+  survey_data.append({'name': 'Are these policies implemented through specific procedures to ensure discrimination is prevented, mitigated and acted upon once detected, as well as to advance diversity and inclusion in general?', 'value': ESRS_S1_1_31 if ESRS_S1_1_31!='None' else '', 'id': 'ESRS_S1_1_31', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_S1_1_31' in include_question_ids})
+  survey_data.append({'name': 'Please share how policies are implemented through specific procedures to ensure discrimination is prevented, mitigated and acted upon once detected, as well as to advance diversity and inclusion in general.', 'value': ESRS_S1_1_32, 'id': 'ESRS_S1_1_32', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_32' in include_question_ids})
+  survey_data.append({'name': 'Please provide an illustration of the types of communication of policies to those individuals, group of individuals or entities for whom they are relevant.*', 'value': ESRS_S1_1_33, 'id': 'ESRS_S1_1_33', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_33' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking has policies and procedures which make qualifications, skills and experience the basis for the recruitment, placement, training and advancement at all levels.*', 'value': ESRS_S1_1_34, 'id': 'ESRS_S1_1_34', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_34' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking assigns responsibility at top management level for equal treatment and opportunities in employment, issue clear company-wide policies and procedures to guide equal employment practices, and link advancement to desired performance in this area.*', 'value': ESRS_S1_1_35, 'id': 'ESRS_S1_1_35', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_35' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking provides or is planning to provide staff training on non-discrimination policies and practices.*', 'value': ESRS_S1_1_36, 'id': 'ESRS_S1_1_36', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_36' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking makes adjustments to the physical environment to ensure health and safety for workers, customers and other visitors with disabilities.*', 'value': ESRS_S1_1_37, 'id': 'ESRS_S1_1_37', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_37' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking evaluates or plans to evaluate whether job requirements have been defined in a way that could systematically disadvantage certain groups.*', 'value': ESRS_S1_1_38, 'id': 'ESRS_S1_1_38', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_38' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking keeps or is planning to keep up-to-date records on recruitment, training and promotion that provide a transparent view of opportunities for employees and their progression within the undertaking.*', 'value': ESRS_S1_1_39, 'id': 'ESRS_S1_1_39', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_39' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking puts or is planning to put in place grievance procedures to address complaints, handle appeals and provide recourse for employees (especially in the context of negotiations and collective agreements) when discrimination is identified, and is alert to formal structures and informal cultural issues that can prevent employees from raising concerns and grievances.*', 'value': ESRS_S1_1_40, 'id': 'ESRS_S1_1_40', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_40' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether the undertaking has or is planning to have programs to promote access to skills development.*', 'value': ESRS_S1_1_41, 'id': 'ESRS_S1_1_41', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_S1_1_41' in include_question_ids})
 
   card_title = 'esrs-s1-1'
   card_description = ''
@@ -700,7 +723,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

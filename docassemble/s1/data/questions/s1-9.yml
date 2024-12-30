@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall disclose the gender distribution at top management and the age distribution amongst its employees. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,50 +31,73 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["S1_9_1", "S1_9_2", "S1_9_3", "S1_9_4", "S1_9_5", "S1_9_6", "S1_9_7", "S1_9_8", "S1_9_9", "S1_9_10", "S1_9_11"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'Please disclose the number of employees (head count) at top management level.', 'value': S1_9_1, 'id': 'S1_9_1', 'answer_type': 'INTEGER'})
-  survey_data.append({'name': 'Please disclose the percentage of employees at top management level.', 'value': S1_9_2, 'id': 'S1_9_2', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as female.', 'value': S1_9_3, 'id': 'S1_9_3', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as male.', 'value': S1_9_4, 'id': 'S1_9_4', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as other gender.', 'value': S1_9_5, 'id': 'S1_9_5', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the number of employees (head count) under 30 years old.', 'value': S1_9_6, 'id': 'S1_9_6', 'answer_type': 'INTEGER'})
-  survey_data.append({'name': 'Please disclose the percentage of employees under 30 years old.', 'value': S1_9_7, 'id': 'S1_9_7', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please share information of the number of employees (head count) between 30 and 50 years old.', 'value': S1_9_8, 'id': 'S1_9_8', 'answer_type': 'INTEGER'})
-  survey_data.append({'name': 'Please share information of the number of employees (head count) over 50 years old.', 'value': S1_9_9, 'id': 'S1_9_9', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the percentage of employees over 50 years old.', 'value': S1_9_10, 'id': 'S1_9_10', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own definition of top management used.', 'value': S1_9_11, 'id': 'S1_9_11', 'answer_type': 'OPEN'})
+  survey_data.append({'name': 'Please disclose the number of employees (head count) at top management level.', 'value': S1_9_1, 'id': 'S1_9_1', 'answer_type': 'INTEGER', 'included': 'S1_9_1' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees at top management level.', 'value': S1_9_2, 'id': 'S1_9_2', 'answer_type': 'PERCENT', 'included': 'S1_9_2' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as female.', 'value': S1_9_3, 'id': 'S1_9_3', 'answer_type': 'PERCENT', 'included': 'S1_9_3' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as male.', 'value': S1_9_4, 'id': 'S1_9_4', 'answer_type': 'PERCENT', 'included': 'S1_9_4' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees at top management identifying as other gender.', 'value': S1_9_5, 'id': 'S1_9_5', 'answer_type': 'PERCENT', 'included': 'S1_9_5' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of employees (head count) under 30 years old.', 'value': S1_9_6, 'id': 'S1_9_6', 'answer_type': 'INTEGER', 'included': 'S1_9_6' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees under 30 years old.', 'value': S1_9_7, 'id': 'S1_9_7', 'answer_type': 'PERCENT', 'included': 'S1_9_7' in include_question_ids})
+  survey_data.append({'name': 'Please share information of the number of employees (head count) between 30 and 50 years old.', 'value': S1_9_8, 'id': 'S1_9_8', 'answer_type': 'INTEGER', 'included': 'S1_9_8' in include_question_ids})
+  survey_data.append({'name': 'Please share information of the number of employees (head count) over 50 years old.', 'value': S1_9_9, 'id': 'S1_9_9', 'answer_type': 'NUMERIC', 'included': 'S1_9_9' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employees over 50 years old.', 'value': S1_9_10, 'id': 'S1_9_10', 'answer_type': 'PERCENT', 'included': 'S1_9_10' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own definition of top management used.', 'value': S1_9_11, 'id': 'S1_9_11', 'answer_type': 'OPEN', 'included': 'S1_9_11' in include_question_ids})
 
   card_title = 's1-9'
   card_description = ''
@@ -355,7 +378,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

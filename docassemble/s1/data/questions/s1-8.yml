@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall disclose information on the extent to which the working conditions and terms of employment of its employees are determined or influenced by collective bargaining agreements and on the extent to which its employees are represented in social dialogue in the European Economic Area (EEA) at the establishment and European level. All questions marked with * are voluntary. Questions marked with *** voluntary for one year for non-EEA countries. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,47 +31,70 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["S1_8_1", "S1_8_2", "S1_8_3", "S1_8_4", "S1_8_5", "S1_8_6", "S1_8_7", "S1_8_8"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'How many of the undertaking&#x27;s employees are covered by collective bargaining agreements?***', 'value': S1_8_1, 'id': 'S1_8_1', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA).***', 'value': S1_8_2, 'id': 'S1_8_2', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region. ***', 'value': S1_8_3, 'id': 'S1_8_3', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.* ***', 'value': S1_8_4, 'id': 'S1_8_4', 'answer_type': 'OPEN'})
-  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.* ***', 'value': S1_8_5, 'id': 'S1_8_5', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives.***', 'value': S1_8_6, 'id': 'S1_8_6', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council.***', 'value': S1_8_7, 'id': 'S1_8_7', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region.***', 'value': S1_8_8, 'id': 'S1_8_8', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'How many of the undertaking&#x27;s employees are covered by collective bargaining agreements?***', 'value': S1_8_1, 'id': 'S1_8_1', 'answer_type': 'PERCENT', 'included': 'S1_8_1' in include_question_ids})
+  survey_data.append({'name': 'Please state the percentage of employees covered by collective bargaining agreements within coverage rate by country (in the EEA).***', 'value': S1_8_2, 'id': 'S1_8_2', 'answer_type': 'PERCENT', 'included': 'S1_8_2' in include_question_ids})
+  survey_data.append({'name': 'Please state the percentage of own employees covered by collective bargaining agreements (outside EEA) by region. ***', 'value': S1_8_3, 'id': 'S1_8_3', 'answer_type': 'PERCENT', 'included': 'S1_8_3' in include_question_ids})
+  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment for employees not covered by collective bargaining agreements are determined based on collective bargaining agreements that cover other employees or based on collective bargaining agreements from other undertakings.* ***', 'value': S1_8_4, 'id': 'S1_8_4', 'answer_type': 'OPEN', 'included': 'S1_8_4' in include_question_ids})
+  survey_data.append({'name': 'Please describe extent to which working conditions and terms of employment of non-employees in own workforce are determined or influenced by collective bargaining agreements.* ***', 'value': S1_8_5, 'id': 'S1_8_5', 'answer_type': 'OPEN_LARGE', 'included': 'S1_8_5' in include_question_ids})
+  survey_data.append({'name': 'Please state the percentage of employees in country (EEA) covered by workers&#x27; representatives.***', 'value': S1_8_6, 'id': 'S1_8_6', 'answer_type': 'PERCENT', 'included': 'S1_8_6' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the existence of any agreement with employees for representation by European Works Council (EWC), Societas Europaea (SE) Works Council, or Societas Cooperativa Europaea (SCE) Works Council.***', 'value': S1_8_7, 'id': 'S1_8_7', 'answer_type': 'OPEN_LARGE', 'included': 'S1_8_7' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s own workforce in region (non-EEA) covered by collective bargaining agreements by coverage rate and by region.***', 'value': S1_8_8, 'id': 'S1_8_8', 'answer_type': 'OPEN_LARGE', 'included': 'S1_8_8' in include_question_ids})
 
   card_title = 's1-8'
   card_description = ''
@@ -287,7 +310,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

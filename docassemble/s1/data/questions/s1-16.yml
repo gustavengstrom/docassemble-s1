@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall disclose the percentage gap in pay between its female and male employees and the ratio between the remuneration of its highest paid individual and the median remuneration for its employees. All questions marked with * are voluntary. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,46 +31,69 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["S1_16_1", "S1_16_2", "S1_16_3", "S1_16_4", "S1_16_5", "S1_16_6", "S1_16_7"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'What is the gender pay gap, defined as the difference of average pay levels between female and male employees, expressed as percentage of the average pay level of male employees of the undertaking?', 'value': S1_16_1, 'id': 'S1_16_1', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'What is the annual total remuneration ratio of the highest paid individual to the median annual total remuneration for all employees (excluding the highest-paid individual)?', 'value': S1_16_2, 'id': 'S1_16_2', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please disclose any contextual information necessary to understand the data and how the data has been compiled and other changes to the underlying data that are to be considered.', 'value': S1_16_3, 'id': 'S1_16_3', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose a breakdown of the gender pay gap by employee category and/or by country/segment.*', 'value': S1_16_4, 'id': 'S1_16_4', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the gender pay gap between employees by categories of employees broken down by ordinary basic salary and complementary or variable components.*', 'value': S1_16_5, 'id': 'S1_16_5', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please report this figure adjusted for purchasing power differences between countries.*', 'value': S1_16_6, 'id': 'S1_16_6', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'For figures adjusted for purchasing power differences between countries, the undertaking shall report the methodology used for the calculation.*', 'value': S1_16_7, 'id': 'S1_16_7', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'What is the gender pay gap, defined as the difference of average pay levels between female and male employees, expressed as percentage of the average pay level of male employees of the undertaking?', 'value': S1_16_1, 'id': 'S1_16_1', 'answer_type': 'PERCENT', 'included': 'S1_16_1' in include_question_ids})
+  survey_data.append({'name': 'What is the annual total remuneration ratio of the highest paid individual to the median annual total remuneration for all employees (excluding the highest-paid individual)?', 'value': S1_16_2, 'id': 'S1_16_2', 'answer_type': 'PERCENT', 'included': 'S1_16_2' in include_question_ids})
+  survey_data.append({'name': 'Please disclose any contextual information necessary to understand the data and how the data has been compiled and other changes to the underlying data that are to be considered.', 'value': S1_16_3, 'id': 'S1_16_3', 'answer_type': 'OPEN_LARGE', 'included': 'S1_16_3' in include_question_ids})
+  survey_data.append({'name': 'Please disclose a breakdown of the gender pay gap by employee category and/or by country/segment.*', 'value': S1_16_4, 'id': 'S1_16_4', 'answer_type': 'NUMERIC', 'included': 'S1_16_4' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the gender pay gap between employees by categories of employees broken down by ordinary basic salary and complementary or variable components.*', 'value': S1_16_5, 'id': 'S1_16_5', 'answer_type': 'NUMERIC', 'included': 'S1_16_5' in include_question_ids})
+  survey_data.append({'name': 'Please report this figure adjusted for purchasing power differences between countries.*', 'value': S1_16_6, 'id': 'S1_16_6', 'answer_type': 'PERCENT', 'included': 'S1_16_6' in include_question_ids})
+  survey_data.append({'name': 'For figures adjusted for purchasing power differences between countries, the undertaking shall report the methodology used for the calculation.*', 'value': S1_16_7, 'id': 'S1_16_7', 'answer_type': 'OPEN_LARGE', 'included': 'S1_16_7' in include_question_ids})
 
   card_title = 's1-16'
   card_description = ''
@@ -303,7 +326,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

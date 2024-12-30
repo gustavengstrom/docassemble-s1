@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     All questions marked with * are voluntary. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,46 +31,69 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["S1_4_1", "S1_4_2", "S1_4_3", "S1_4_5", "S1_4_6", "S1_4_7", "S1_4_8", "S1_4_9", "S1_4_10", "S1_4_11", "S1_4_12", "S1_4_13", "S1_4_14", "S1_4_15", "S1_4_16", "S1_4_17", "S1_4_18", "S1_4_19", "S1_4_20", "S1_4_21", "S1_4_22", "S1_4_23", "S1_4_24", "S1_4_25", "S1_4_26", "S1_4_27", "S1_4_28", "S1_4_29", "S1_4_30", "S1_4_31", "S1_4_32", "S1_4_33", "S1_4_34", "S1_4_35", "S1_4_36", "S1_4_37", "S1_4_38", "S1_4_39", "S1_4_40", "S1_4_41", "S1_4_42", "S1_4_43", "S1_4_44"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'Are there action plans and resources to manage its material impacts, risks, and opportunities related to own workforce?', 'value': S1_4_1 if S1_4_1!='None' else '', 'id': 'S1_4_1', 'answer_type': 'Yes/No/Partly', 'dynamic_header':'Please elaborate on the questions below for each action.', 'dynamic_condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Are there action plans and resources to manage its material impacts, risks, and opportunities related to own workforce?', 'value': S1_4_1 if S1_4_1!='None' else '', 'id': 'S1_4_1', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_1' in include_question_ids})
   if not defined('S1_4_2'):
     define('S1_4_2', '_n/a_')
-  survey_data.append({'name': 'Please disclose reasons for not having adopted actions.', 'value': S1_4_2, 'id': 'S1_4_2', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_1', 'condition_criteria': 'No'})
+  survey_data.append({'name': 'Please disclose reasons for not having adopted actions.', 'value': S1_4_2, 'id': 'S1_4_2', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_1', 'condition_criteria': 'No', 'included': 'S1_4_2' in include_question_ids})
   if not defined('S1_4_3'):
     define('S1_4_3', '_n/a_')
-  survey_data.append({'name': 'Please disclose the timeframe in which the undertakings aims to adopt actions.*', 'value': S1_4_3, 'id': 'S1_4_3', 'answer_type': 'OPEN', 'condition': 'S1_4_1', 'condition_criteria': 'No'})
+  survey_data.append({'name': 'Please disclose the timeframe in which the undertakings aims to adopt actions.*', 'value': S1_4_3, 'id': 'S1_4_3', 'answer_type': 'OPEN', 'condition': 'S1_4_1', 'condition_criteria': 'No', 'included': 'S1_4_3' in include_question_ids})
   if S1_4_1 in ['Yes', 'Partly']:
     S1_4_4.gather()
   else:
@@ -81,92 +104,92 @@ code: |
   for index, indicator in enumerate(S1_4_4):
     if not indicator.attribute_defined('S1_4_5'):
       indicator.S1_4_5 = '_n/a_'
-    survey_data.append({'name': 'Please provide a short description of the action.', 'value': indicator.S1_4_5, 'id': f'S1_4_5__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Please provide a short description of the action.', 'value': indicator.S1_4_5, 'id': f'S1_4_5__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_5' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_6'):
       indicator.S1_4_6 = '_n/a_'
-    survey_data.append({'name': 'Disclosure of key action.', 'value': indicator.S1_4_6, 'id': f'S1_4_6__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Disclosure of key action.', 'value': indicator.S1_4_6, 'id': f'S1_4_6__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_6' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_7'):
       indicator.S1_4_7 = '_n/a_'
-    survey_data.append({'name': 'Description of scope of key action.', 'value': indicator.S1_4_7, 'id': f'S1_4_7__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Description of scope of key action.', 'value': indicator.S1_4_7, 'id': f'S1_4_7__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_7' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_8'):
       indicator.S1_4_8 = '_n/a_'
-    survey_data.append({'name': 'Time horizon under which key action is to be completed.', 'value': indicator.S1_4_8, 'id': f'S1_4_8__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Time horizon under which key action is to be completed.', 'value': indicator.S1_4_8, 'id': f'S1_4_8__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_8' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_9'):
       indicator.S1_4_9 = '_n/a_'
-    survey_data.append({'name': 'Description of key action taken, and its results, to provide for and cooperate in or support provision of remedy for those harmed by actual material impacts.', 'value': indicator.S1_4_9, 'id': f'S1_4_9__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Description of key action taken, and its results, to provide for and cooperate in or support provision of remedy for those harmed by actual material impacts.', 'value': indicator.S1_4_9, 'id': f'S1_4_9__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_9' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_10'):
       indicator.S1_4_10 = '_n/a_'
-    survey_data.append({'name': 'Disclosure of quantitative and qualitative information regarding progress of actions or action plans disclosed in prior periods.', 'value': indicator.S1_4_10, 'id': f'S1_4_10__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Disclosure of quantitative and qualitative information regarding progress of actions or action plans disclosed in prior periods.', 'value': indicator.S1_4_10, 'id': f'S1_4_10__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_10' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_11'):
       indicator.S1_4_11 = '_n/a_'
-    survey_data.append({'name': 'Disclosure of the type of current and future financial and other resources allocated to the action plan (Capex and Opex).', 'value': indicator.S1_4_11, 'id': f'S1_4_11__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Disclosure of the type of current and future financial and other resources allocated to the action plan (Capex and Opex).', 'value': indicator.S1_4_11, 'id': f'S1_4_11__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_11' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_12'):
       indicator.S1_4_12 = '_n/a_'
-    survey_data.append({'name': 'Please explain how current financial resources relate to most relevant amounts presented in financial statements.', 'value': indicator.S1_4_12, 'id': f'S1_4_12__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Please explain how current financial resources relate to most relevant amounts presented in financial statements.', 'value': indicator.S1_4_12, 'id': f'S1_4_12__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'OPEN', 'included': 'S1_4_12' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_13'):
       indicator.S1_4_13 = '_n/a_'
-    survey_data.append({'name': 'Current financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_13, 'id': f'S1_4_13__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Current financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_13, 'id': f'S1_4_13__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'included': 'S1_4_13' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_14'):
       indicator.S1_4_14 = '_n/a_'
-    survey_data.append({'name': 'Current financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_14, 'id': f'S1_4_14__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Current financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_14, 'id': f'S1_4_14__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'included': 'S1_4_14' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_15'):
       indicator.S1_4_15 = '_n/a_'
-    survey_data.append({'name': 'Future financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_15, 'id': f'S1_4_15__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Future financial resources allocated to action plan (Capex).', 'value': indicator.S1_4_15, 'id': f'S1_4_15__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'included': 'S1_4_15' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
     if not indicator.attribute_defined('S1_4_16'):
       indicator.S1_4_16 = '_n/a_'
-    survey_data.append({'name': 'Future financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_16, 'id': f'S1_4_16__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'condition': 'S1_4_1'})
+    survey_data.append({'name': 'Future financial resources allocated to action plan (Opex).', 'value': indicator.S1_4_16, 'id': f'S1_4_16__DQ{index}', 'tag': indicator.name.text, 'answer_type': 'CURRENCY', 'included': 'S1_4_16' in include_question_ids, 'dynamic_group_id': 'S1_4_4', 'dynamic_condition': 'S1_4_1', 'dynamic_condition_criteria': 'Yes/Partly', 'dynamic_header': 'Please elaborate on the questions below for each action.'})
   if S1_4_1 not in ['Yes', 'Partly']:
     S1_4_4.clear()
-  survey_data.append({'name': 'Please disclose how future financial resources relate to most relevant amounts presented in financial statements.', 'value': S1_4_17, 'id': 'S1_4_17', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Has the undertaking taken action to provide or enable remedy in relation to an actual material impact?', 'value': S1_4_18 if S1_4_18!='None' else '', 'id': 'S1_4_18', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose how future financial resources relate to most relevant amounts presented in financial statements.', 'value': S1_4_17, 'id': 'S1_4_17', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_17' in include_question_ids})
+  survey_data.append({'name': 'Has the undertaking taken action to provide or enable remedy in relation to an actual material impact?', 'value': S1_4_18 if S1_4_18!='None' else '', 'id': 'S1_4_18', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_18' in include_question_ids})
   if not defined('S1_4_19'):
     define('S1_4_19', '_n/a_')
-  survey_data.append({'name': 'If yes or partly please disclose how the undertaking has taken action to provide or enable remedy in relation to an actual material impact.', 'value': S1_4_19, 'id': 'S1_4_19', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_18', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Are there any additional actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce?', 'value': S1_4_20 if S1_4_20!='None' else '', 'id': 'S1_4_20', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'If yes or partly please disclose how the undertaking has taken action to provide or enable remedy in relation to an actual material impact.', 'value': S1_4_19, 'id': 'S1_4_19', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_18', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_19' in include_question_ids})
+  survey_data.append({'name': 'Are there any additional actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce?', 'value': S1_4_20 if S1_4_20!='None' else '', 'id': 'S1_4_20', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_20' in include_question_ids})
   if not defined('S1_4_21'):
     define('S1_4_21', '_n/a_')
-  survey_data.append({'name': 'Please disclose actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce.', 'value': S1_4_21, 'id': 'S1_4_21', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_20', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce?', 'value': S1_4_22 if S1_4_22!='None' else '', 'id': 'S1_4_22', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose actions or initiatives in place with the primary purpose of delivering positive impacts for the undertaking&#x27;s own workforce.', 'value': S1_4_21, 'id': 'S1_4_21', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_20', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_21' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce?', 'value': S1_4_22 if S1_4_22!='None' else '', 'id': 'S1_4_22', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_22' in include_question_ids})
   if not defined('S1_4_23'):
     define('S1_4_23', '_n/a_')
-  survey_data.append({'name': 'Please disclose how the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce.', 'value': S1_4_23, 'id': 'S1_4_23', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_22', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking have processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce?', 'value': S1_4_24 if S1_4_24!='None' else '', 'id': 'S1_4_24', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose how the undertaking track and assess the effectiveness of these actions and initiatives in delivering outcomes for its own workforce.', 'value': S1_4_23, 'id': 'S1_4_23', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_22', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_23' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce?', 'value': S1_4_24 if S1_4_24!='None' else '', 'id': 'S1_4_24', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_24' in include_question_ids})
   if not defined('S1_4_25'):
     define('S1_4_25', '_n/a_')
-  survey_data.append({'name': 'Please share the undertaking&#x27;s processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce.', 'value': S1_4_25, 'id': 'S1_4_25', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_24', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking plan or implement any action to mitigate material risks for the undertaking arising from its impacts and dependencies on its own workforce?', 'value': S1_4_26 if S1_4_26!='None' else '', 'id': 'S1_4_26', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please share the undertaking&#x27;s processes through which it identifies what action is needed and appropriate in response to a particular actual or potential negative impact on its own workforce.', 'value': S1_4_25, 'id': 'S1_4_25', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_24', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_25' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking plan or implement any action to mitigate material risks for the undertaking arising from its impacts and dependencies on its own workforce?', 'value': S1_4_26 if S1_4_26!='None' else '', 'id': 'S1_4_26', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_26' in include_question_ids})
   if not defined('S1_4_27'):
     define('S1_4_27', '_n/a_')
-  survey_data.append({'name': 'Please describe the actions and how it tracks effectiveness in practice.', 'value': S1_4_27, 'id': 'S1_4_27', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_26', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking have action/s planned or underway to pursue material opportunities for the undertaking in relation to its own workforce?', 'value': S1_4_28 if S1_4_28!='None' else '', 'id': 'S1_4_28', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please describe the actions and how it tracks effectiveness in practice.', 'value': S1_4_27, 'id': 'S1_4_27', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_26', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_27' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have action/s planned or underway to pursue material opportunities for the undertaking in relation to its own workforce?', 'value': S1_4_28 if S1_4_28!='None' else '', 'id': 'S1_4_28', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_28' in include_question_ids})
   if not defined('S1_4_29'):
     define('S1_4_29', '_n/a_')
-  survey_data.append({'name': 'Please share the actions planned or underway to pursue material opportunities for the undertaking in relation to its own workforce.', 'value': S1_4_29, 'id': 'S1_4_29', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Please share the actions planned or underway to pursue material opportunities for the undertaking in relation to its own workforce.', 'value': S1_4_29, 'id': 'S1_4_29', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_29' in include_question_ids})
   if not defined('S1_4_30'):
     define('S1_4_30', '_n/a_')
-  survey_data.append({'name': 'Please disclose information about whether and how people in the undertaking&#x27;s own workforce and workers’ representatives play a role in decisions regarding the design and implementation of programmes or processes whose primary aim is to deliver positive impacts for workers.*', 'value': S1_4_30, 'id': 'S1_4_30', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Please disclose information about whether and how people in the undertaking&#x27;s own workforce and workers’ representatives play a role in decisions regarding the design and implementation of programmes or processes whose primary aim is to deliver positive impacts for workers.*', 'value': S1_4_30, 'id': 'S1_4_30', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_30' in include_question_ids})
   if not defined('S1_4_31'):
     define('S1_4_31', '_n/a_')
-  survey_data.append({'name': 'Please disclose information about the intended or achieved positive outcomes for the undertaking’s own workforce of these programmes or processes.*', 'value': S1_4_31, 'id': 'S1_4_31', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Please disclose information about the intended or achieved positive outcomes for the undertaking’s own workforce of these programmes or processes.*', 'value': S1_4_31, 'id': 'S1_4_31', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_31' in include_question_ids})
   if not defined('S1_4_32'):
     define('S1_4_32', '_n/a_')
-  survey_data.append({'name': 'Please also explain whether any such initiatives are designed also to support the achievement of one or more Sustainable Development Goals.*', 'value': S1_4_32, 'id': 'S1_4_32', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce?', 'value': S1_4_33 if S1_4_33!='None' else '', 'id': 'S1_4_33', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please also explain whether any such initiatives are designed also to support the achievement of one or more Sustainable Development Goals.*', 'value': S1_4_32, 'id': 'S1_4_32', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_28', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_32' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce?', 'value': S1_4_33 if S1_4_33!='None' else '', 'id': 'S1_4_33', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_33' in include_question_ids})
   if not defined('S1_4_34'):
     define('S1_4_34', '_n/a_')
-  survey_data.append({'name': 'Please disclose how the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce.', 'value': S1_4_34, 'id': 'S1_4_34', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_33', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Does the undertaking allocate resources to the management of its material impacts?', 'value': S1_4_35 if S1_4_35!='None' else '', 'id': 'S1_4_35', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Please disclose how the undertaking ensure that its own practices do not cause or contribute to material negative impacts on own workforce.', 'value': S1_4_34, 'id': 'S1_4_34', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_33', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_34' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking allocate resources to the management of its material impacts?', 'value': S1_4_35 if S1_4_35!='None' else '', 'id': 'S1_4_35', 'answer_type': 'Yes/No/Partly', 'included': 'S1_4_35' in include_question_ids})
   if not defined('S1_4_36'):
     define('S1_4_36', '_n/a_')
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s resources allocated to the management of its material impacts.', 'value': S1_4_36, 'id': 'S1_4_36', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_35', 'condition_criteria': 'Yes/Partly'})
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s general and specific approaches to addressing material negative impacts.*', 'value': S1_4_37, 'id': 'S1_4_37', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose the undertaking&#x27;s initiatives aimed at contributing to additional material positive impacts.*', 'value': S1_4_38, 'id': 'S1_4_38', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose how far the undertaking has progressed in its efforts during the reporting period.*', 'value': S1_4_39, 'id': 'S1_4_39', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'The undertaking may disclose its aims for continued improvement.*', 'value': S1_4_40, 'id': 'S1_4_40', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose whether and how the undertaking seeks to use its leverage in its business relationships to manage material negative impacts affecting its own workforce.*', 'value': S1_4_41, 'id': 'S1_4_41', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose how the initiative, and the undertaking&#x27;s own involvement, is aiming to address the material impact concerned.*', 'value': S1_4_42, 'id': 'S1_4_42', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please share information about measures taken to mitigate negative impacts on its own workforce that arise from the transition to a greener, climate-neutral economy.', 'value': S1_4_43, 'id': 'S1_4_43', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please explain which internal functions are involved in managing the impacts and what types of action they take to address negative and advance positive impacts.*', 'value': S1_4_44, 'id': 'S1_4_44', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s resources allocated to the management of its material impacts.', 'value': S1_4_36, 'id': 'S1_4_36', 'answer_type': 'OPEN_LARGE', 'condition': 'S1_4_35', 'condition_criteria': 'Yes/Partly', 'included': 'S1_4_36' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s general and specific approaches to addressing material negative impacts.*', 'value': S1_4_37, 'id': 'S1_4_37', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_37' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the undertaking&#x27;s initiatives aimed at contributing to additional material positive impacts.*', 'value': S1_4_38, 'id': 'S1_4_38', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_38' in include_question_ids})
+  survey_data.append({'name': 'Please disclose how far the undertaking has progressed in its efforts during the reporting period.*', 'value': S1_4_39, 'id': 'S1_4_39', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_39' in include_question_ids})
+  survey_data.append({'name': 'The undertaking may disclose its aims for continued improvement.*', 'value': S1_4_40, 'id': 'S1_4_40', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_40' in include_question_ids})
+  survey_data.append({'name': 'Please disclose whether and how the undertaking seeks to use its leverage in its business relationships to manage material negative impacts affecting its own workforce.*', 'value': S1_4_41, 'id': 'S1_4_41', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_41' in include_question_ids})
+  survey_data.append({'name': 'Please disclose how the initiative, and the undertaking&#x27;s own involvement, is aiming to address the material impact concerned.*', 'value': S1_4_42, 'id': 'S1_4_42', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_42' in include_question_ids})
+  survey_data.append({'name': 'Please share information about measures taken to mitigate negative impacts on its own workforce that arise from the transition to a greener, climate-neutral economy.', 'value': S1_4_43, 'id': 'S1_4_43', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_43' in include_question_ids})
+  survey_data.append({'name': 'Please explain which internal functions are involved in managing the impacts and what types of action they take to address negative and advance positive impacts.*', 'value': S1_4_44, 'id': 'S1_4_44', 'answer_type': 'OPEN_LARGE', 'included': 'S1_4_44' in include_question_ids})
 
   card_title = 's1-4'
   card_description = ''
@@ -669,7 +692,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

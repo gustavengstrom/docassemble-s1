@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall disclose its material impacts, risks and opportunities and how they interact with its strategy and business model. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -64,54 +64,77 @@ help:
     Forced labour
     Type of operations and geographical areas at risk of forced labour
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["ESRS_2_SBM_3_1", "ESRS_2_SBM_3_2", "ESRS_2_SBM_3_3", "ESRS_2_SBM_3_4", "ESRS_2_SBM_3_5", "ESRS_2_SBM_3_6", "ESRS_2_SBM_3_7", "ESRS_2_SBM_3_8", "ESRS_2_SBM_3_9", "ESRS_2_SBM_3_10", "ESRS_2_SBM_3_11", "ESRS_2_SBM_3_12", "ESRS_2_SBM_3_13"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'Are all people in the undertaking&#x27;s own workforce who could be materially impacted by the undertaking included in the scope of its disclosure under ESRS 2? These material impacts shall include impacts that are connected with the undertaking’s own operations and its value chain, including through its products or services, as well as through its business relationships.', 'value': ESRS_2_SBM_3_1 if ESRS_2_SBM_3_1!='None' else '', 'id': 'ESRS_2_SBM_3_1', 'answer_type': 'Yes/No/Partly'})
-  survey_data.append({'name': 'Provide a brief description of the types of employees and non-employees in the undertaking&#x27;s own workforce subject to material impacts by its operations, and specify whether they are employees, self-employed people, or people provided by third party undertakings primarily engaged in employment activities.', 'value': ESRS_2_SBM_3_2, 'id': 'ESRS_2_SBM_3_2', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose any identified material negative impacts by operations on the undertaking&#x27;s own workforce.', 'value': ESRS_2_SBM_3_3 if ESRS_2_SBM_3_3!='None' else '', 'id': 'ESRS_2_SBM_3_3', 'answer_type': 'Yes/No/Partly'})
-  survey_data.append({'name': 'Please disclose the activities that result in the positive impacts, the types of employees and non-employees in its own workforce that are positively affected or could be positively affected; the undertaking may also disclose whether the positive impacts occur in specific countries or regions.', 'value': ESRS_2_SBM_3_4, 'id': 'ESRS_2_SBM_3_4', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe the undertaking&#x27;s material risks and opportunities arising from impacts and dependencies on its own workforce?', 'value': ESRS_2_SBM_3_5, 'id': 'ESRS_2_SBM_3_5', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe any material impacts the undertaking has identified on its own workforce that may arise from transition plans for reducing negative impacts on the environment and achieving greener and climate- neutral operations.', 'value': ESRS_2_SBM_3_6, 'id': 'ESRS_2_SBM_3_6', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)?', 'value': ESRS_2_SBM_3_7, 'id': 'ESRS_2_SBM_3_7', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe if the undertaking has identified any operations at significant risk of incidents of forced labour or compulsory labour in terms of countries or geographic areas with operations considered at risk?', 'value': ESRS_2_SBM_3_8, 'id': 'ESRS_2_SBM_3_8', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of type of operation (such as manufacturing plant) that the undertaking has identified.', 'value': ESRS_2_SBM_3_9, 'id': 'ESRS_2_SBM_3_9', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of countries or geographic areas with operations considered at risk identified by the operations.', 'value': ESRS_2_SBM_3_10, 'id': 'ESRS_2_SBM_3_10', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please describe how the undertaking has developed an understanding of how people with particular characteristics, those working in particular contexts, or those undertaking particular activities may be at greater risk of harm.', 'value': ESRS_2_SBM_3_11, 'id': 'ESRS_2_SBM_3_11', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Does any of its material risks and opportunities arising from impacts and dependencies on people in its own workforce relate to specific groups of people rather than to all of its own workforce?', 'value': ESRS_2_SBM_3_12 if ESRS_2_SBM_3_12!='None' else '', 'id': 'ESRS_2_SBM_3_12', 'answer_type': 'Yes/No/Partly'})
+  survey_data.append({'name': 'Are all people in the undertaking&#x27;s own workforce who could be materially impacted by the undertaking included in the scope of its disclosure under ESRS 2? These material impacts shall include impacts that are connected with the undertaking’s own operations and its value chain, including through its products or services, as well as through its business relationships.', 'value': ESRS_2_SBM_3_1 if ESRS_2_SBM_3_1!='None' else '', 'id': 'ESRS_2_SBM_3_1', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_2_SBM_3_1' in include_question_ids})
+  survey_data.append({'name': 'Provide a brief description of the types of employees and non-employees in the undertaking&#x27;s own workforce subject to material impacts by its operations, and specify whether they are employees, self-employed people, or people provided by third party undertakings primarily engaged in employment activities.', 'value': ESRS_2_SBM_3_2, 'id': 'ESRS_2_SBM_3_2', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_2' in include_question_ids})
+  survey_data.append({'name': 'Please disclose any identified material negative impacts by operations on the undertaking&#x27;s own workforce.', 'value': ESRS_2_SBM_3_3 if ESRS_2_SBM_3_3!='None' else '', 'id': 'ESRS_2_SBM_3_3', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_2_SBM_3_3' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the activities that result in the positive impacts, the types of employees and non-employees in its own workforce that are positively affected or could be positively affected; the undertaking may also disclose whether the positive impacts occur in specific countries or regions.', 'value': ESRS_2_SBM_3_4, 'id': 'ESRS_2_SBM_3_4', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_4' in include_question_ids})
+  survey_data.append({'name': 'Please describe the undertaking&#x27;s material risks and opportunities arising from impacts and dependencies on its own workforce?', 'value': ESRS_2_SBM_3_5, 'id': 'ESRS_2_SBM_3_5', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_5' in include_question_ids})
+  survey_data.append({'name': 'Please describe any material impacts the undertaking has identified on its own workforce that may arise from transition plans for reducing negative impacts on the environment and achieving greener and climate- neutral operations.', 'value': ESRS_2_SBM_3_6, 'id': 'ESRS_2_SBM_3_6', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_6' in include_question_ids})
+  survey_data.append({'name': 'Please describe any operations the undertaking has identified at significant risk of incidents of forced labour or compulsory labour in terms of type of operation (such as manufacturing plant)?', 'value': ESRS_2_SBM_3_7, 'id': 'ESRS_2_SBM_3_7', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_7' in include_question_ids})
+  survey_data.append({'name': 'Please describe if the undertaking has identified any operations at significant risk of incidents of forced labour or compulsory labour in terms of countries or geographic areas with operations considered at risk?', 'value': ESRS_2_SBM_3_8, 'id': 'ESRS_2_SBM_3_8', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_8' in include_question_ids})
+  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of type of operation (such as manufacturing plant) that the undertaking has identified.', 'value': ESRS_2_SBM_3_9, 'id': 'ESRS_2_SBM_3_9', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_9' in include_question_ids})
+  survey_data.append({'name': 'Please describe any operations at significant risk of incidents of child labour in terms of countries or geographic areas with operations considered at risk identified by the operations.', 'value': ESRS_2_SBM_3_10, 'id': 'ESRS_2_SBM_3_10', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_10' in include_question_ids})
+  survey_data.append({'name': 'Please describe how the undertaking has developed an understanding of how people with particular characteristics, those working in particular contexts, or those undertaking particular activities may be at greater risk of harm.', 'value': ESRS_2_SBM_3_11, 'id': 'ESRS_2_SBM_3_11', 'answer_type': 'OPEN_LARGE', 'included': 'ESRS_2_SBM_3_11' in include_question_ids})
+  survey_data.append({'name': 'Does any of its material risks and opportunities arising from impacts and dependencies on people in its own workforce relate to specific groups of people rather than to all of its own workforce?', 'value': ESRS_2_SBM_3_12 if ESRS_2_SBM_3_12!='None' else '', 'id': 'ESRS_2_SBM_3_12', 'answer_type': 'Yes/No/Partly', 'included': 'ESRS_2_SBM_3_12' in include_question_ids})
   if not defined('ESRS_2_SBM_3_13'):
     define('ESRS_2_SBM_3_13', '_n/a_')
-  survey_data.append({'name': 'Please disclose what risks and opportunities that arise from impacts and dependencies on people in the undertaking&#x27;s own workforce related to specific groups of people rather than to all of its own workforce.', 'value': ESRS_2_SBM_3_13, 'id': 'ESRS_2_SBM_3_13', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_2_SBM_3_12', 'condition_criteria': 'Yes/Partly'})
+  survey_data.append({'name': 'Please disclose what risks and opportunities that arise from impacts and dependencies on people in the undertaking&#x27;s own workforce related to specific groups of people rather than to all of its own workforce.', 'value': ESRS_2_SBM_3_13, 'id': 'ESRS_2_SBM_3_13', 'answer_type': 'OPEN_LARGE', 'condition': 'ESRS_2_SBM_3_12', 'condition_criteria': 'Yes/Partly', 'included': 'ESRS_2_SBM_3_13' in include_question_ids})
 
   card_title = 'esrs-2-sbm-3'
   card_description = ''
@@ -400,7 +423,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---

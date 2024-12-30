@@ -6,7 +6,7 @@ metadata:
   show login: False
   description: |
     The undertaking shall describe key characteristics of employees in its own workforce. All questions marked with * are voluntary. If unsure, leave blank. 
-  revision_date: 2024-11-25
+  revision_date: 2024-12-30
 ---
 modules:
   - .post
@@ -31,190 +31,213 @@ subquestion: |
 
   To get started, press **Continue**.
 ---
+reset:
+  - validate_status
+---
 mandatory: True
 code: |
   multi_user = True
   guest_member = None
 
-  # Get query params
-  board_id = url_args.get("board_id", "")
-  survey_id = url_args.get("survey_id", "")
+  # If not local browser session (device_local) has a token attribute then we look if it has been submitted as a query param
+  # This works together with reset validate_status to ensure that every refresh and browser start token validity is checked
+  if not hasattr(device_local, 'token'):
+    device_local.token = url_args.get("token", "token_arg_not_found")
+  # if "token" in url_args:
+  #   del url_args["token"]
+
   django_hostname = os.environ.get("DJANGOHOSTNAME")
-  redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
   login_url = f"https://{django_hostname}/accounts/login/"
 
   intro_screen
-  validate_status, validate_content = validate_session({"board_id": board_id, "survey_id": survey_id})
+  validate_status, validate_content = validate_session(device_local.token)
   if validate_status != 200:
      invalid_token_screen
   else:
     session_info = json.loads(validate_content)
+    board_id = session_info.get("board_id", "")
+    survey_id = session_info.get("survey_id", "")
     guest_member = session_info.get("guest_member")
     external = session_info.get("external")
-    if guest_member:
-      redirect_url = "https://www.beyondcsrd.se"
-
-  # This is needed so we can filter active interviews on board_id
-  session_tags().add(board_id)
-  session_tags().add(board_id+"__"+survey_id)
+    include_question_ids = session_info.get("include_question_ids")
+    
+  if guest_member:
+    redirect_url = "https://www.beyondcsrd.se"
+  else:
+    redirect_url = f"https://{django_hostname}/pages/{board_id}/{survey_id}/completed/?submitted=1"
 
   if external:
     external_organisation_name
   else:
     external_organisation_name = None
 
+  question_ids = ["S1_6_1", "S1_6_2", "S1_6_3", "S1_6_4", "S1_6_5", "S1_6_6", "S1_6_7", "S1_6_8", "S1_6_9", "S1_6_10", "S1_6_11", "S1_6_12", "S1_6_13", "S1_6_14", "S1_6_15", "S1_6_16", "S1_6_17", "S1_6_18", "S1_6_19", "S1_6_20", "S1_6_21", "S1_6_22", "S1_6_23", "S1_6_24", "S1_6_25", "S1_6_26", "S1_6_27", "S1_6_28", "S1_6_29", "S1_6_30", "S1_6_31", "S1_6_32", "S1_6_33", "S1_6_34", "S1_6_35", "S1_6_36", "S1_6_37", "S1_6_38", "S1_6_39", "S1_6_40", "S1_6_41", "S1_6_42", "S1_6_43", "S1_6_44", "S1_6_45", "S1_6_46", "S1_6_47", "S1_6_48", "S1_6_49", "S1_6_50", "S1_6_51", "S1_6_52", "S1_6_53", "S1_6_54", "S1_6_55", "S1_6_56", "S1_6_57", "S1_6_58", "S1_6_59", "S1_6_60", "S1_6_61", "S1_6_62", "S1_6_63", "S1_6_64", "S1_6_65", "S1_6_66", "S1_6_67", "S1_6_68", "S1_6_69", "S1_6_70", "S1_6_71", "S1_6_72", "S1_6_73", "S1_6_74", "S1_6_75", "S1_6_76", "S1_6_77", "S1_6_78", "S1_6_79", "S1_6_80", "S1_6_81", "S1_6_82", "S1_6_83", "S1_6_84", "S1_6_85", "S1_6_86", "S1_6_87", "S1_6_88", "S1_6_89", "S1_6_90", "S1_6_91"]
+
+  if include_question_ids: 
+    for question_id in question_ids:
+        if not question_id in include_question_ids:
+          define(question_id, "")
+          
+  else:
+    include_question_ids = question_ids
+    
+
+  # This is needed so we can filter active interviews on board_id
+  session_tags().add(board_id)
+  session_tags().add(board_id+"__"+survey_id)
+
   survey_data = []
-  survey_data.append({'name': 'Please disclose the number of employees (head count).', 'value': S1_6_1, 'id': 'S1_6_1', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female employees (head count).', 'value': S1_6_2, 'id': 'S1_6_2', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male employees (head count).', 'value': S1_6_3, 'id': 'S1_6_3', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of employees identifying as other gender (head count).', 'value': S1_6_4, 'id': 'S1_6_4', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Average number of employees (head count).', 'value': S1_6_5, 'id': 'S1_6_5', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Average number of female employees (head count).', 'value': S1_6_6, 'id': 'S1_6_6', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Average number of male employees (head count).', 'value': S1_6_7, 'id': 'S1_6_7', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Average number of employees identifying as other gender (head count).', 'value': S1_6_8, 'id': 'S1_6_8', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Does the undertaking have 50 or more employees representing at least 10% of its total number of employees in more than one country?', 'value': S1_6_9 if S1_6_9!='None' else '', 'id': 'S1_6_9', 'answer_type': 'Yes/No'})
+  survey_data.append({'name': 'Please disclose the number of employees (head count).', 'value': S1_6_1, 'id': 'S1_6_1', 'answer_type': 'NUMERIC', 'included': 'S1_6_1' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female employees (head count).', 'value': S1_6_2, 'id': 'S1_6_2', 'answer_type': 'NUMERIC', 'included': 'S1_6_2' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male employees (head count).', 'value': S1_6_3, 'id': 'S1_6_3', 'answer_type': 'NUMERIC', 'included': 'S1_6_3' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of employees identifying as other gender (head count).', 'value': S1_6_4, 'id': 'S1_6_4', 'answer_type': 'NUMERIC', 'included': 'S1_6_4' in include_question_ids})
+  survey_data.append({'name': 'Average number of employees (head count).', 'value': S1_6_5, 'id': 'S1_6_5', 'answer_type': 'NUMERIC', 'included': 'S1_6_5' in include_question_ids})
+  survey_data.append({'name': 'Average number of female employees (head count).', 'value': S1_6_6, 'id': 'S1_6_6', 'answer_type': 'NUMERIC', 'included': 'S1_6_6' in include_question_ids})
+  survey_data.append({'name': 'Average number of male employees (head count).', 'value': S1_6_7, 'id': 'S1_6_7', 'answer_type': 'NUMERIC', 'included': 'S1_6_7' in include_question_ids})
+  survey_data.append({'name': 'Average number of employees identifying as other gender (head count).', 'value': S1_6_8, 'id': 'S1_6_8', 'answer_type': 'NUMERIC', 'included': 'S1_6_8' in include_question_ids})
+  survey_data.append({'name': 'Does the undertaking have 50 or more employees representing at least 10% of its total number of employees in more than one country?', 'value': S1_6_9 if S1_6_9!='None' else '', 'id': 'S1_6_9', 'answer_type': 'Yes/No', 'included': 'S1_6_9' in include_question_ids})
   if not defined('S1_6_10'):
     define('S1_6_10', '_n/a_')
-  survey_data.append({'name': 'Please disclose the total number of employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_10, 'id': 'S1_6_10', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the total number of employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_10, 'id': 'S1_6_10', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_10' in include_question_ids})
   if not defined('S1_6_11'):
     define('S1_6_11', '_n/a_')
-  survey_data.append({'name': 'Please disclose the total number of female employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_11, 'id': 'S1_6_11', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the total number of female employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_11, 'id': 'S1_6_11', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_11' in include_question_ids})
   if not defined('S1_6_12'):
     define('S1_6_12', '_n/a_')
-  survey_data.append({'name': 'Please disclose the total number of male employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_12, 'id': 'S1_6_12', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the total number of male employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_12, 'id': 'S1_6_12', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_12' in include_question_ids})
   if not defined('S1_6_13'):
     define('S1_6_13', '_n/a_')
-  survey_data.append({'name': 'Please disclose the total number of employees identifying as other gender in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_13, 'id': 'S1_6_13', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the total number of employees identifying as other gender in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_13, 'id': 'S1_6_13', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_13' in include_question_ids})
   if not defined('S1_6_14'):
     define('S1_6_14', '_n/a_')
-  survey_data.append({'name': 'Please disclose the average number of employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_14, 'id': 'S1_6_14', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the average number of employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_14, 'id': 'S1_6_14', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_14' in include_question_ids})
   if not defined('S1_6_15'):
     define('S1_6_15', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_15, 'id': 'S1_6_15', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_15, 'id': 'S1_6_15', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_15' in include_question_ids})
   if not defined('S1_6_16'):
     define('S1_6_16', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of other gender employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_16, 'id': 'S1_6_16', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of other gender employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_16, 'id': 'S1_6_16', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_16' in include_question_ids})
   if not defined('S1_6_17'):
     define('S1_6_17', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_17, 'id': 'S1_6_17', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_17, 'id': 'S1_6_17', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_17' in include_question_ids})
   if not defined('S1_6_18'):
     define('S1_6_18', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of male permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_18, 'id': 'S1_6_18', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of male permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_18, 'id': 'S1_6_18', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_18' in include_question_ids})
   if not defined('S1_6_19'):
     define('S1_6_19', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number other gender of permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_19, 'id': 'S1_6_19', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number other gender of permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_19, 'id': 'S1_6_19', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_19' in include_question_ids})
   if not defined('S1_6_20'):
     define('S1_6_20', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_20, 'id': 'S1_6_20', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total permanent employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_20, 'id': 'S1_6_20', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_20' in include_question_ids})
   if not defined('S1_6_21'):
     define('S1_6_21', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_21, 'id': 'S1_6_21', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_21, 'id': 'S1_6_21', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_21' in include_question_ids})
   if not defined('S1_6_22'):
     define('S1_6_22', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of male temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_22, 'id': 'S1_6_22', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of male temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_22, 'id': 'S1_6_22', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_22' in include_question_ids})
   if not defined('S1_6_23'):
     define('S1_6_23', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of other gender temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_23, 'id': 'S1_6_23', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of other gender temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_23, 'id': 'S1_6_23', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_23' in include_question_ids})
   if not defined('S1_6_24'):
     define('S1_6_24', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_24, 'id': 'S1_6_24', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_24, 'id': 'S1_6_24', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_24' in include_question_ids})
   if not defined('S1_6_25'):
     define('S1_6_25', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_25, 'id': 'S1_6_25', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_25, 'id': 'S1_6_25', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_25' in include_question_ids})
   if not defined('S1_6_26'):
     define('S1_6_26', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_26, 'id': 'S1_6_26', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_26, 'id': 'S1_6_26', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_26' in include_question_ids})
   if not defined('S1_6_27'):
     define('S1_6_27', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_27, 'id': 'S1_6_27', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_27, 'id': 'S1_6_27', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_27' in include_question_ids})
   if not defined('S1_6_28'):
     define('S1_6_28', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_28, 'id': 'S1_6_28', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region B.*', 'value': S1_6_28, 'id': 'S1_6_28', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_28' in include_question_ids})
   if not defined('S1_6_29'):
     define('S1_6_29', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_29, 'id': 'S1_6_29', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_29, 'id': 'S1_6_29', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_29' in include_question_ids})
   if not defined('S1_6_30'):
     define('S1_6_30', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total female full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_30, 'id': 'S1_6_30', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total female full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_30, 'id': 'S1_6_30', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_30' in include_question_ids})
   if not defined('S1_6_31'):
     define('S1_6_31', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total male full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_31, 'id': 'S1_6_31', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total male full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_31, 'id': 'S1_6_31', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_31' in include_question_ids})
   if not defined('S1_6_32'):
     define('S1_6_32', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total other gender full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_32, 'id': 'S1_6_32', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total other gender full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_32, 'id': 'S1_6_32', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_32' in include_question_ids})
   if not defined('S1_6_33'):
     define('S1_6_33', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_33, 'id': 'S1_6_33', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_33, 'id': 'S1_6_33', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_33' in include_question_ids})
   if not defined('S1_6_34'):
     define('S1_6_34', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of female part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_34, 'id': 'S1_6_34', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of female part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_34, 'id': 'S1_6_34', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_34' in include_question_ids})
   if not defined('S1_6_35'):
     define('S1_6_35', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of male part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_35, 'id': 'S1_6_35', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of male part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_35, 'id': 'S1_6_35', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_35' in include_question_ids})
   if not defined('S1_6_36'):
     define('S1_6_36', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of other part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_36, 'id': 'S1_6_36', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of other part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_36, 'id': 'S1_6_36', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_36' in include_question_ids})
   if not defined('S1_6_37'):
     define('S1_6_37', '_n/a_')
-  survey_data.append({'name': 'Please disclose the number of not disclosed part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_37, 'id': 'S1_6_37', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the number of not disclosed part-time employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_37, 'id': 'S1_6_37', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_37' in include_question_ids})
   if not defined('S1_6_38'):
     define('S1_6_38', '_n/a_')
-  survey_data.append({'name': 'Please disclose the total number of employees, head count or full time equivalent (FTE) in region B.*', 'value': S1_6_38, 'id': 'S1_6_38', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
+  survey_data.append({'name': 'Please disclose the total number of employees, head count or full time equivalent (FTE) in region B.*', 'value': S1_6_38, 'id': 'S1_6_38', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_38' in include_question_ids})
   if not defined('S1_6_39'):
     define('S1_6_39', '_n/a_')
-  survey_data.append({'name': 'Please disclose the average number by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_39, 'id': 'S1_6_39', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes'})
-  survey_data.append({'name': 'Please disclose the average number of female employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_40, 'id': 'S1_6_40', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number of male employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_41, 'id': 'S1_6_41', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number of employees identifying as other gender in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_42, 'id': 'S1_6_42', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the total number of permanent employees (head count or full-time equivalent).', 'value': S1_6_43, 'id': 'S1_6_43', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose average the number of permanent employees (head count or full-time equivalent).', 'value': S1_6_44, 'id': 'S1_6_44', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of permanent female employees.', 'value': S1_6_45, 'id': 'S1_6_45', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of permanent male employees.', 'value': S1_6_46, 'id': 'S1_6_46', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of permanent employees identifying as other gender.', 'value': S1_6_47, 'id': 'S1_6_47', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the total number of temporary employees.', 'value': S1_6_48, 'id': 'S1_6_48', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number of temporary employees.', 'value': S1_6_49, 'id': 'S1_6_49', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of temporary female employees.', 'value': S1_6_50, 'id': 'S1_6_50', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of temporary male employees.', 'value': S1_6_51, 'id': 'S1_6_51', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of temporary employees identifying as other gender.', 'value': S1_6_52, 'id': 'S1_6_52', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the total number of non-guaranteed hours employees.', 'value': S1_6_53, 'id': 'S1_6_53', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number of non-guaranteed hours employees.', 'value': S1_6_54, 'id': 'S1_6_54', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours female employees.', 'value': S1_6_55, 'id': 'S1_6_55', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours male employees.', 'value': S1_6_56, 'id': 'S1_6_56', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours employees identifying as other gender.', 'value': S1_6_57, 'id': 'S1_6_57', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_58, 'id': 'S1_6_58', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_59, 'id': 'S1_6_59', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_60, 'id': 'S1_6_60', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of other gender employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_61, 'id': 'S1_6_61', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female permanent employees by head count or full time equivalent (FTE)in region A.*', 'value': S1_6_62, 'id': 'S1_6_62', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_63, 'id': 'S1_6_63', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number other gender of permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_64, 'id': 'S1_6_64', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_65, 'id': 'S1_6_65', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_66, 'id': 'S1_6_66', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_67, 'id': 'S1_6_67', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of other gender temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_68, 'id': 'S1_6_68', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_69, 'id': 'S1_6_69', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_70, 'id': 'S1_6_70', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE)in region A.*', 'value': S1_6_71, 'id': 'S1_6_71', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE).*', 'value': S1_6_72, 'id': 'S1_6_72', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_73, 'id': 'S1_6_73', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_74, 'id': 'S1_6_74', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total full-time female employees by head count or full time equivalent (FTE).*', 'value': S1_6_75, 'id': 'S1_6_75', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total male full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_76, 'id': 'S1_6_76', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total other gender full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_77, 'id': 'S1_6_77', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_78, 'id': 'S1_6_78', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of female part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_79, 'id': 'S1_6_79', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of male part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_80, 'id': 'S1_6_80', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of other part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_81, 'id': 'S1_6_81', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the number of not disclosed part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_82, 'id': 'S1_6_82', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the total number of employees, head count or full time equivalent (FTE).*', 'value': S1_6_83, 'id': 'S1_6_83', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the average number by head count or full time equivalent (FTE).*', 'value': S1_6_84, 'id': 'S1_6_84', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the total number of employees who have left the undertaking during the reporting period.', 'value': S1_6_85, 'id': 'S1_6_85', 'answer_type': 'NUMERIC'})
-  survey_data.append({'name': 'Please disclose the percentage of employee turnover in the reporting period.', 'value': S1_6_86, 'id': 'S1_6_86', 'answer_type': 'PERCENT'})
-  survey_data.append({'name': 'Please share a description of the methodologies and assumptions used to compile the data.', 'value': S1_6_87, 'id': 'S1_6_87', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please disclose if non-employees numbers are reported in head count or full time equivalent.', 'value': S1_6_88 if S1_6_88!='None' else '', 'id': 'S1_6_88', 'answer_type': 'Head Count/Fte'})
-  survey_data.append({'name': 'Please disclose when non-employees numbers are reported.', 'value': S1_6_89 if S1_6_89!='None' else '', 'id': 'S1_6_89', 'answer_type': 'At End Of Reporting Period/Average/Other Methodology'})
-  survey_data.append({'name': 'Please provide contextual information necessary to understand the data.', 'value': S1_6_90, 'id': 'S1_6_90', 'answer_type': 'OPEN_LARGE'})
-  survey_data.append({'name': 'Please provide a cross-reference of the information reported in under paragraph 50 (a) above to the most representative number in the financial statements.', 'value': S1_6_91, 'id': 'S1_6_91', 'answer_type': 'OPEN_LARGE'})
+  survey_data.append({'name': 'Please disclose the average number by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_39, 'id': 'S1_6_39', 'answer_type': 'NUMERIC', 'condition': 'S1_6_9', 'condition_criteria': 'Yes', 'included': 'S1_6_39' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number of female employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_40, 'id': 'S1_6_40', 'answer_type': 'NUMERIC', 'included': 'S1_6_40' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number of male employees in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_41, 'id': 'S1_6_41', 'answer_type': 'NUMERIC', 'included': 'S1_6_41' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number of employees identifying as other gender in countries with 50 or more employees representing at least 10% of total number of employees.', 'value': S1_6_42, 'id': 'S1_6_42', 'answer_type': 'NUMERIC', 'included': 'S1_6_42' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the total number of permanent employees (head count or full-time equivalent).', 'value': S1_6_43, 'id': 'S1_6_43', 'answer_type': 'NUMERIC', 'included': 'S1_6_43' in include_question_ids})
+  survey_data.append({'name': 'Please disclose average the number of permanent employees (head count or full-time equivalent).', 'value': S1_6_44, 'id': 'S1_6_44', 'answer_type': 'NUMERIC', 'included': 'S1_6_44' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of permanent female employees.', 'value': S1_6_45, 'id': 'S1_6_45', 'answer_type': 'NUMERIC', 'included': 'S1_6_45' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of permanent male employees.', 'value': S1_6_46, 'id': 'S1_6_46', 'answer_type': 'NUMERIC', 'included': 'S1_6_46' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of permanent employees identifying as other gender.', 'value': S1_6_47, 'id': 'S1_6_47', 'answer_type': 'NUMERIC', 'included': 'S1_6_47' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the total number of temporary employees.', 'value': S1_6_48, 'id': 'S1_6_48', 'answer_type': 'NUMERIC', 'included': 'S1_6_48' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number of temporary employees.', 'value': S1_6_49, 'id': 'S1_6_49', 'answer_type': 'NUMERIC', 'included': 'S1_6_49' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of temporary female employees.', 'value': S1_6_50, 'id': 'S1_6_50', 'answer_type': 'NUMERIC', 'included': 'S1_6_50' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of temporary male employees.', 'value': S1_6_51, 'id': 'S1_6_51', 'answer_type': 'NUMERIC', 'included': 'S1_6_51' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of temporary employees identifying as other gender.', 'value': S1_6_52, 'id': 'S1_6_52', 'answer_type': 'NUMERIC', 'included': 'S1_6_52' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the total number of non-guaranteed hours employees.', 'value': S1_6_53, 'id': 'S1_6_53', 'answer_type': 'NUMERIC', 'included': 'S1_6_53' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number of non-guaranteed hours employees.', 'value': S1_6_54, 'id': 'S1_6_54', 'answer_type': 'NUMERIC', 'included': 'S1_6_54' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours female employees.', 'value': S1_6_55, 'id': 'S1_6_55', 'answer_type': 'NUMERIC', 'included': 'S1_6_55' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours male employees.', 'value': S1_6_56, 'id': 'S1_6_56', 'answer_type': 'NUMERIC', 'included': 'S1_6_56' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of non-guaranteed hours employees identifying as other gender.', 'value': S1_6_57, 'id': 'S1_6_57', 'answer_type': 'NUMERIC', 'included': 'S1_6_57' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_58, 'id': 'S1_6_58', 'answer_type': 'NUMERIC', 'included': 'S1_6_58' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_59, 'id': 'S1_6_59', 'answer_type': 'NUMERIC', 'included': 'S1_6_59' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female employees by head count or full time equivalent (FTE) in region B.*', 'value': S1_6_60, 'id': 'S1_6_60', 'answer_type': 'NUMERIC', 'included': 'S1_6_60' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of other gender employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_61, 'id': 'S1_6_61', 'answer_type': 'NUMERIC', 'included': 'S1_6_61' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female permanent employees by head count or full time equivalent (FTE)in region A.*', 'value': S1_6_62, 'id': 'S1_6_62', 'answer_type': 'NUMERIC', 'included': 'S1_6_62' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_63, 'id': 'S1_6_63', 'answer_type': 'NUMERIC', 'included': 'S1_6_63' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number other gender of permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_64, 'id': 'S1_6_64', 'answer_type': 'NUMERIC', 'included': 'S1_6_64' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total permanent employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_65, 'id': 'S1_6_65', 'answer_type': 'NUMERIC', 'included': 'S1_6_65' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_66, 'id': 'S1_6_66', 'answer_type': 'NUMERIC', 'included': 'S1_6_66' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_67, 'id': 'S1_6_67', 'answer_type': 'NUMERIC', 'included': 'S1_6_67' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of other gender temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_68, 'id': 'S1_6_68', 'answer_type': 'NUMERIC', 'included': 'S1_6_68' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total temporary employees by head count or full time equivalent (FTE) in region A.*', 'value': S1_6_69, 'id': 'S1_6_69', 'answer_type': 'NUMERIC', 'included': 'S1_6_69' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_70, 'id': 'S1_6_70', 'answer_type': 'NUMERIC', 'included': 'S1_6_70' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male non-guaranteed hours employees by headcount or full time equivalent (FTE)in region A.*', 'value': S1_6_71, 'id': 'S1_6_71', 'answer_type': 'NUMERIC', 'included': 'S1_6_71' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of other gender non-guaranteed hours employees by headcount or full time equivalent (FTE).*', 'value': S1_6_72, 'id': 'S1_6_72', 'answer_type': 'NUMERIC', 'included': 'S1_6_72' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total non-guaranteed hours employees by headcount or full time equivalent (FTE) in region A.*', 'value': S1_6_73, 'id': 'S1_6_73', 'answer_type': 'NUMERIC', 'included': 'S1_6_73' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_74, 'id': 'S1_6_74', 'answer_type': 'NUMERIC', 'included': 'S1_6_74' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total full-time female employees by head count or full time equivalent (FTE).*', 'value': S1_6_75, 'id': 'S1_6_75', 'answer_type': 'NUMERIC', 'included': 'S1_6_75' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total male full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_76, 'id': 'S1_6_76', 'answer_type': 'NUMERIC', 'included': 'S1_6_76' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total other gender full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_77, 'id': 'S1_6_77', 'answer_type': 'NUMERIC', 'included': 'S1_6_77' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of total full-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_78, 'id': 'S1_6_78', 'answer_type': 'NUMERIC', 'included': 'S1_6_78' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of female part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_79, 'id': 'S1_6_79', 'answer_type': 'NUMERIC', 'included': 'S1_6_79' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of male part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_80, 'id': 'S1_6_80', 'answer_type': 'NUMERIC', 'included': 'S1_6_80' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of other part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_81, 'id': 'S1_6_81', 'answer_type': 'NUMERIC', 'included': 'S1_6_81' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the number of not disclosed part-time employees by head count or full time equivalent (FTE).*', 'value': S1_6_82, 'id': 'S1_6_82', 'answer_type': 'NUMERIC', 'included': 'S1_6_82' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the total number of employees, head count or full time equivalent (FTE).*', 'value': S1_6_83, 'id': 'S1_6_83', 'answer_type': 'NUMERIC', 'included': 'S1_6_83' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the average number by head count or full time equivalent (FTE).*', 'value': S1_6_84, 'id': 'S1_6_84', 'answer_type': 'NUMERIC', 'included': 'S1_6_84' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the total number of employees who have left the undertaking during the reporting period.', 'value': S1_6_85, 'id': 'S1_6_85', 'answer_type': 'NUMERIC', 'included': 'S1_6_85' in include_question_ids})
+  survey_data.append({'name': 'Please disclose the percentage of employee turnover in the reporting period.', 'value': S1_6_86, 'id': 'S1_6_86', 'answer_type': 'PERCENT', 'included': 'S1_6_86' in include_question_ids})
+  survey_data.append({'name': 'Please share a description of the methodologies and assumptions used to compile the data.', 'value': S1_6_87, 'id': 'S1_6_87', 'answer_type': 'OPEN_LARGE', 'included': 'S1_6_87' in include_question_ids})
+  survey_data.append({'name': 'Please disclose if non-employees numbers are reported in head count or full time equivalent.', 'value': S1_6_88 if S1_6_88!='None' else '', 'id': 'S1_6_88', 'answer_type': 'Head Count/Fte', 'included': 'S1_6_88' in include_question_ids})
+  survey_data.append({'name': 'Please disclose when non-employees numbers are reported.', 'value': S1_6_89 if S1_6_89!='None' else '', 'id': 'S1_6_89', 'answer_type': 'At End Of Reporting Period/Average/Other Methodology', 'included': 'S1_6_89' in include_question_ids})
+  survey_data.append({'name': 'Please provide contextual information necessary to understand the data.', 'value': S1_6_90, 'id': 'S1_6_90', 'answer_type': 'OPEN_LARGE', 'included': 'S1_6_90' in include_question_ids})
+  survey_data.append({'name': 'Please provide a cross-reference of the information reported in under paragraph 50 (a) above to the most representative number in the financial statements.', 'value': S1_6_91, 'id': 'S1_6_91', 'answer_type': 'OPEN_LARGE', 'included': 'S1_6_91' in include_question_ids})
 
   card_title = 's1-6'
   card_description = ''
@@ -1116,7 +1139,5 @@ subquestion: |
 event: invalid_token_screen
 question: |
   Your survey token is invalid. Please contact the administrator to request a new url. 
-subquestion: |
-  ${ action_button_html(login_url, size='md', color='primary', label='Login', new_window=False) }
 
 ---
